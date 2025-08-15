@@ -35,3 +35,7 @@ func (u *RegisterRequestDTO) Validate() error {
 	}
 	return nil
 }
+
+type EmailAuthRequestDTO struct {
+	Email string `json:"email"`
+}

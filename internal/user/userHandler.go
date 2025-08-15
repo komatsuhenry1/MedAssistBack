@@ -55,3 +55,38 @@ func (h *UserHandler) LoginUser(c *gin.Context) {
 			},
 		})
 }
+
+func (h *UserHandler) SendCode(c *gin.Context) {
+
+	// userId := utils.GetUserId(c)
+
+	//VALIDACAO DE ROLE
+
+	// claims, exists := c.Get("claims")
+	// if !exists {
+	// 	utils.SendErrorResponse(c, "Usuário não autenticado.", http.StatusUnauthorized)
+	// 	return
+	// }
+	// role, ok := claims.(jwt.MapClaims)["role"].(string)
+	// if !ok {
+	// 	utils.SendErrorResponse(c, "Usuário não autenticado.", http.StatusUnauthorized)
+	// 	return
+	// }
+
+	// fmt.Println("userId: ", userId)
+
+	var emailAuthRequestDTO dto.EmailAuthRequestDTO
+	if err := c.ShouldBindJSON(&emailAuthRequestDTO); err != nil {
+		utils.SendErrorResponse(c, "Requisição inválida", http.StatusBadRequest)
+		return
+	}
+
+	codeResponseDTO, err := h.service.SendCodeToEmail(emailAuthRequestDTO)
+	if err != nil {
+		utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	utils.SendSuccessResponse(c, "Código enviado com sucesso.", codeResponseDTO)
+
+}

@@ -18,5 +18,6 @@ type User struct {
 	Role        string             `bson:"role" json:"role" binding:"required"`
 	FirstAccess bool               `bson:"first_access" json:"first_access"`
 	CreatedAt   time.Time          `bson:"created_at" json:"created_at"`
+	TempCode    int                `bson:"temp_code" json:"temp_code"`
 	UpdatedAt   time.Time          `bson:"updated_at" json:"updated_at"`
 }
