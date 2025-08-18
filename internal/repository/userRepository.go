@@ -14,6 +14,7 @@ import (
 
 type UserRepository interface {
 	FindUserByEmail(email string) (model.User, error)
+	FindUserByCpf(cpf string) (model.User, error)
 	CreateUser(user *model.User) error
 	UpdateTempCode(userID string, code int) error
 }
@@ -35,6 +36,20 @@ func (r *userRepository) FindUserByEmail(email string) (model.User, error) {
 	var user model.User
 	err := r.collection.FindOne(r.ctx, bson.M{"email": email}).Decode(&user)
 	fmt.Println("err", err)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return user, fmt.Errorf("usuário não encontrado")
+		}
+		return user, err
+	}
+
+	return user, nil
+}
+
+func (r *userRepository) FindUserByCpf(cpf string) (model.User, error) {
+
+	var user model.User
+	err := r.collection.FindOne(r.ctx, bson.M{"cpf": cpf}).Decode(&user)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return user, fmt.Errorf("usuário não encontrado")

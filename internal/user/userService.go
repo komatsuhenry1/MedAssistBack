@@ -68,6 +68,11 @@ func (s *userService) Register(registerRequestDTO dto.RegisterRequestDTO) (model
 		return model.User{}, fmt.Errorf("o usuario com o email '%s' ja existe", normalizedEmail)
 	}
 
+	_, err = s.userRepository.FindUserByCpf(registerRequestDTO.Cpf)
+	if err == nil {
+		return model.User{}, fmt.Errorf("o usuario com o CPF '%s' ja existe", registerRequestDTO.Cpf)
+	}
+
 	// password, err := utils.GeneratePassword()
 	// if err != nil {
 	// 	return model.User{}, fmt.Errorf("erro ao gerar senha: %w", err)
