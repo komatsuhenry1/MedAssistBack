@@ -16,6 +16,7 @@ type UserService interface {
 	Register(registerRequestDTO dto.RegisterRequestDTO) (model.User, error)
 	Login(loginRequestDTO dto.LoginRequestDTO) (string, model.User, error)
 	SendCodeToEmail(emailAuthRequestDTO dto.EmailAuthRequestDTO) (dto.CodeResponseDTO, error)
+	ValidateUserCode(inputCodeDto dto.InputCodeDto) (string, error)
 }
 
 type userService struct {
@@ -72,14 +73,6 @@ func (s *userService) Register(registerRequestDTO dto.RegisterRequestDTO) (model
 	if err == nil {
 		return model.User{}, fmt.Errorf("o usuario com o CPF '%s' ja existe", registerRequestDTO.Cpf)
 	}
-
-	// password, err := utils.GeneratePassword()
-	// if err != nil {
-	// 	return model.User{}, fmt.Errorf("erro ao gerar senha: %w", err)
-	// }
-	// fmt.Println("--------------------------------")
-	// fmt.Println("password", password)
-	// fmt.Println("--------------------------------")
 
 	hashedPassword, err := utils.HashPassword(registerRequestDTO.Password)
 	if err != nil {
@@ -140,12 +133,36 @@ func (s *userService) SendCodeToEmail(emailAuthRequestDTO dto.EmailAuthRequestDT
 		return dto.CodeResponseDTO{}, fmt.Errorf("erro ao enviar codigo de verificacao")
 	}
 
-	fmt.Println("erro de mandar email: ", err)
-
 	//retorna o code para o dto
 	codeResponseDTO := dto.CodeResponseDTO{
 		Code: code,
 	}
 
 	return codeResponseDTO, nil
+}
+
+func (s *userService) ValidateUserCode(inputCodeDto dto.InputCodeDto) (string, error) {
+
+	//busca o usuario pelo email
+	user, err := s.userRepository.FindUserByEmail(inputCodeDto.Email)
+	if err != nil {
+		return "", fmt.Errorf("erro ao buscar user by email")
+	}
+
+	//valida o codigo inputado com o do banco
+	userCode := user.TempCode
+
+	// if inputcode == db_code
+	//		return token
+	//else
+	//		return error
+	if inputCodeDto.Code == userCode {
+		token, err := utils.GenerateToken(user.ID.Hex(), user.Role, user.Hidden)
+		if err != nil {
+			return "", fmt.Errorf("Erro ao gerar token.")
+		}
+		return token, nil
+	}
+
+	return "", fmt.Errorf("Código inválido.")
 }

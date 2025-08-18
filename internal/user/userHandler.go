@@ -1,6 +1,7 @@
 package user
 
 import (
+	"fmt"
 	"medassist/internal/user/dto"
 	"medassist/utils"
 	"net/http"
@@ -93,5 +94,19 @@ func (h *UserHandler) SendCode(c *gin.Context) {
 }
 
 func (h *UserHandler) ValidateCode(c *gin.Context) {
+	var inputCodeDto dto.InputCodeDto
+	if err := c.ShouldBindJSON(&inputCodeDto); err != nil {
+		utils.SendErrorResponse(c, "Requisição inválida", http.StatusBadRequest)
+		return
+	}
 
+	token, err := h.service.ValidateUserCode(inputCodeDto)
+	if err != nil {
+		utils.SendErrorResponse(c, "Código inválido.", http.StatusBadRequest)
+		return
+	}
+
+	fmt.Println("token: ", token)
+
+	utils.SendSuccessResponse(c, "Código enviado com sucesso.", token)
 }
