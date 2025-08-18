@@ -34,8 +34,8 @@ func (r *userRepository) FindUserByEmail(email string) (model.User, error) {
 
 	var user model.User
 	err := r.collection.FindOne(r.ctx, bson.M{"email": email}).Decode(&user)
-	fmt.Println(err)
-	if err == nil {
+	fmt.Println("err", err)
+	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return user, fmt.Errorf("usuário não encontrado")
 		}

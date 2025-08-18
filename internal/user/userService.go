@@ -64,7 +64,7 @@ func (s *userService) Register(registerRequestDTO dto.RegisterRequestDTO) (model
 
 	// Verifica se usuário existe (sem erro se não achar)
 	_, err = s.userRepository.FindUserByEmail(normalizedEmail)
-	if err != nil {
+	if err == nil {
 		return model.User{}, fmt.Errorf("o usuario com o email '%s' ja existe", normalizedEmail)
 	}
 
@@ -117,23 +117,17 @@ func (s *userService) SendCodeToEmail(emailAuthRequestDTO dto.EmailAuthRequestDT
 		return dto.CodeResponseDTO{}, fmt.Errorf("erro ao criar usuário: %w", err)
 	}
 
-	fmt.Println("user encontrado pelo email: ", user)
-	fmt.Println("ID: ", user.ID)
-
 	//gera o codigo
 	code, err := utils.GenerateAuthCode()
 	if err != nil {
 		return dto.CodeResponseDTO{}, fmt.Errorf("erro ao criar usuário: %w", err)
 	}
-	fmt.Println("CODE: ", code)
 
 	// atualiza o campo temp_code no db
 	err = s.userRepository.UpdateTempCode(user.ID.Hex(), code)
 	if err != nil {
 		return dto.CodeResponseDTO{}, fmt.Errorf("erro ao criar usuário: %w", err)
 	}
-
-	fmt.Println("erro de atualizar tempo code: ", err)
 
 	//manda para o email
 	err = utils.SendAuthCode(emailAuthRequestDTO.Email, code)

@@ -26,6 +26,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	createdUser, err := h.service.Register(userRequestDTO)
 	if err != nil {
 		utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
+		return
 	}
 	utils.SendSuccessResponse(c, "usuário criado com sucesso", gin.H{"user": createdUser})
 }
@@ -88,5 +89,9 @@ func (h *UserHandler) SendCode(c *gin.Context) {
 	}
 
 	utils.SendSuccessResponse(c, "Código enviado com sucesso.", codeResponseDTO)
+
+}
+
+func (h *UserHandler) ValidateCode(c *gin.Context) {
 
 }
