@@ -12,7 +12,7 @@ func SendEmail(email string, password string) error {
 	m.SetHeader("From", os.Getenv("EMAIL_SENDER"))
 	m.SetHeader("To", email)
 
-	m.SetHeader("Subject", "🔑 Sua senha de acesso - Bem-vindo à Plataforma")
+	m.SetHeader("Subject", "🔑 Senha inicial - Bem-vindo à Plataforma")
 
 	html := fmt.Sprintf(`
 	<!DOCTYPE html>
@@ -106,9 +106,7 @@ func SendAuthCode(email string, code int) error {
 	m.SetHeader("From", os.Getenv("EMAIL_SENDER"))
 	m.SetHeader("To", email)
 
-	m.SetHeader("Subject", "🔑 Sua senha de acesso - Bem-vindo à Plataforma")
-
-	fmt.Println("code ", code)
+	m.SetHeader("Subject", "🔑 Código de Acesso - Bem-vindo à Plataforma")
 
 	html := fmt.Sprintf(`
 	<!DOCTYPE html>
@@ -161,16 +159,12 @@ func SendAuthCode(email string, code int) error {
 	</head>
 	<body>
 		<div class="container">
-			<h2>🔑 Sua Senha de Acesso</h2>
-			<p>Olá,</p>
-			<p>Seja bem-vindo! Sua conta foi criada com sucesso.</p>
-			<p><strong>E-mail cadastrado:</strong></p>
+			<h2>🔑 Seu código de acesso</h2>
+
+			<p><strong>Code:</strong></p>
 			<div class="code-box">%s</div>
 
-			<p><strong>Sua senha de acesso inicial:</strong></p>
-			<div class="code-box">%s</div>
-
-			<p>⚠️ Por motivos de segurança, recomendamos que você altere sua senha assim que fizer o primeiro login.</p>
+			<p>⚠️ Por motivos de segurança, recomendamos que você altere sua senha no menu de segurança.</p>
 
 			<div class="footer">
 				<p>Se você não solicitou esta conta, apenas ignore este e-mail.</p>
@@ -179,7 +173,7 @@ func SendAuthCode(email string, code int) error {
 		</div>
 	</body>
 	</html>
-	`, email, code)
+	`, code)
 
 	m.SetBody("text/html", html)
 

@@ -152,10 +152,6 @@ func (s *userService) ValidateUserCode(inputCodeDto dto.InputCodeDto) (string, e
 	//valida o codigo inputado com o do banco
 	userCode := user.TempCode
 
-	// if inputcode == db_code
-	//		return token
-	//else
-	//		return error
 	if inputCodeDto.Code == userCode {
 		token, err := utils.GenerateToken(user.ID.Hex(), user.Role, user.Hidden)
 		if err != nil {
