@@ -2,6 +2,7 @@ package router
 
 import (
 	"medassist/internal/di"
+	"medassist/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,5 +14,6 @@ func SetupAuthRoutes(r *gin.Engine, container *di.Container) {
 		auth.POST("/register", container.UserHandler.CreateUser)
 		auth.PATCH("/code", container.UserHandler.SendCode)
 		auth.POST("/validate", container.UserHandler.ValidateCode)
+		auth.PATCH("/activate", middleware.AuthUser(), container.UserHandler.ActivateNursingService)
 	}
 }

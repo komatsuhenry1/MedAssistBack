@@ -48,7 +48,6 @@ func AuthAdmin() gin.HandlerFunc {
 		}
 
 		role, ok := claims["role"].(string)
-		fmt.Println("role: ", role)
 		if !ok || role != "ADMIN" {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"message": "restricted access to administrators",

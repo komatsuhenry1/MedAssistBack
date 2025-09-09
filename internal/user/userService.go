@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -17,6 +18,7 @@ type UserService interface {
 	Login(loginRequestDTO dto.LoginRequestDTO) (string, model.User, error)
 	SendCodeToEmail(emailAuthRequestDTO dto.EmailAuthRequestDTO) (dto.CodeResponseDTO, error)
 	ValidateUserCode(inputCodeDto dto.InputCodeDto) (string, error)
+	UpdateAvailablityNursingService(userId string) (model.User, error)
 }
 
 type userService struct {
@@ -88,6 +90,8 @@ func (s *userService) Register(registerRequestDTO dto.RegisterRequestDTO) (model
 		Email:       registerRequestDTO.Email,
 		Password:    hashedPassword,
 		Role:        "USER",
+		Hidden:      false,
+		Online:      false,
 		FirstAccess: true,
 		TempCode:    0,
 		CreatedAt:   time.Now(),
@@ -161,4 +165,32 @@ func (s *userService) ValidateUserCode(inputCodeDto dto.InputCodeDto) (string, e
 	}
 
 	return "", fmt.Errorf("Código inválido.")
+}
+
+func (s *userService) UpdateAvailablityNursingService(userId string) (model.User, error) {
+
+	//busca o user
+	user, err := s.userRepository.FindUserById(userId)
+	if err != nil {
+		return model.User{}, fmt.Errorf("Erro ao buscar user by id.")
+	}
+
+	if user.Online == true {
+		user.Online = false
+	} else {
+		user.Online = true
+	}
+
+	userUpdates := bson.M{
+		"online":    user.Online,
+		"updatedAt": time.Now(),
+	}
+
+	//salve user com status true/false
+	user, err = s.userRepository.UpdateUser(userId, userUpdates)
+	if err != nil {
+		return model.User{}, fmt.Errorf("Erro ao atualizar user.")
+	}
+
+	return user, nil
 }

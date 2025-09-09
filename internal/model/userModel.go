@@ -16,6 +16,7 @@ type User struct {
 	Password    string             `bson:"password" json:"password" binding:"required"`
 	Hidden      bool               `bson:"hidden" json:"hidden"`
 	Role        string             `bson:"role" json:"role" binding:"required"`
+	Online      bool               `bson:"online" json:"online" binding:"required"`
 	FirstAccess bool               `bson:"first_access" json:"first_access"`
 	CreatedAt   time.Time          `bson:"created_at" json:"created_at"`
 	TempCode    int                `bson:"temp_code" json:"temp_code"`
