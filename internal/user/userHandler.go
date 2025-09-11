@@ -95,10 +95,9 @@ func (h *UserHandler) ValidateCode(c *gin.Context) {
 }
 
 func (h *UserHandler) ActivateNursingService(c *gin.Context) {
-	userId := utils.GetUserId(c)
+	nurseId := utils.GetUserId(c)
 
 	//VALIDACAO DE ROLE
-
 	claims, exists := c.Get("claims")
 	if !exists {
 		utils.SendErrorResponse(c, "Usuário não autenticado.", http.StatusUnauthorized)
@@ -110,16 +109,46 @@ func (h *UserHandler) ActivateNursingService(c *gin.Context) {
 		return
 	}
 
-	if role != "USER" {
+	if role != "NURSE" {
 		utils.SendErrorResponse(c, "Rota apenas para usuários comuns.", http.StatusUnauthorized)
 		return
 	}
 
-	userStatus, err := h.service.UpdateAvailablityNursingService(userId)
+	nurseStatus, err := h.service.UpdateAvailablityNursingService(nurseId)
 	if err != nil {
 		utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	utils.SendSuccessResponse(c, "Serviço ativado com sucesso.", userStatus)
+	utils.SendSuccessResponse(c, "Serviço ativado com sucesso.", nurseStatus)
 }
+
+// func (h *UserHandler) GetAllVisits(c *gin.Context) {
+// 	//VALIDACAO DE ROLE
+// 	claims, exists := c.Get("claims")
+// 	if !exists {
+// 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token inválido"})
+// 		return
+// 	}
+
+// 	// valido a role do user 
+// 	role, ok := claims.(jwt.MapClaims)["role"].(string)
+// 	if !ok {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "role inválido no token"})
+// 		return
+// 	}
+
+// 	fmt.Println("role: ", role)
+
+// 	if role != "NURSE" {
+// 		utils.SendErrorResponse(c, "Rota exclusiva para enfermeiros.", http.StatusBadRequest)
+// 	}
+	
+// 	consults, err := h.service.GetAllVisits()
+// 	if err != nil{
+// 		utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
+// 		return
+// 	}
+
+// 	utils.SendSuccessResponse(c, "Consultas encontradas com sucesso.", consults)
+// }

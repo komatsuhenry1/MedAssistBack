@@ -21,6 +21,7 @@ type RegisterRequestDTO struct {
 	Email    string `json:"email"`
 	Phone    string `json:"phone"`
 	Address  string `json:"address"`
+	Nurse    bool   `json:"nurse"`
 	Name     string `json:"name"`
 	Cpf      string `json:"cpf"`
 	Password string `json:"password"`

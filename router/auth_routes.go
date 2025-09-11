@@ -10,10 +10,19 @@ import (
 func SetupAuthRoutes(r *gin.Engine, container *di.Container) {
 	auth := r.Group("/auth")
 	{
+		//auth routes
 		auth.POST("/login", container.UserHandler.LoginUser)
 		auth.POST("/register", container.UserHandler.CreateUser)
 		auth.PATCH("/code", container.UserHandler.SendCode)
 		auth.POST("/validate", container.UserHandler.ValidateCode)
-		auth.PATCH("/activate", middleware.AuthUser(), container.UserHandler.ActivateNursingService)
+		
+		// rotas para enfermeiros
+		// auth.GET("/users", middleware.AuthNurse(), container.UserHandler.GetAllVisits)
+		auth.PATCH("/activate", middleware.AuthNurse(), container.UserHandler.ActivateNursingService)
+
+		//rotas para usuarios comuns 
+		// auth.POST("/visit", middleware.AuthUser(), container.UserHandler.CreateVisit)
+
+
 	}
 }

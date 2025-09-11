@@ -18,7 +18,8 @@ type UserService interface {
 	Login(loginRequestDTO dto.LoginRequestDTO) (string, model.User, error)
 	SendCodeToEmail(emailAuthRequestDTO dto.EmailAuthRequestDTO) (dto.CodeResponseDTO, error)
 	ValidateUserCode(inputCodeDto dto.InputCodeDto) (string, error)
-	UpdateAvailablityNursingService(userId string) (model.User, error)
+	UpdateAvailablityNursingService(userId string) (model.Nurse, error)
+//	GetAllVisits() ([]model.Visit, error)
 }
 
 type userService struct {
@@ -81,17 +82,23 @@ func (s *userService) Register(registerRequestDTO dto.RegisterRequestDTO) (model
 		return model.User{}, fmt.Errorf("erro ao criptografar senha: %w", err)
 	}
 
+	var role string
+	if registerRequestDTO.Nurse {
+		role = "NURSE"
+	} else {
+		role = "USER"
+	}
+
 	user := model.User{
 		ID:          primitive.NewObjectID(),
 		Name:        registerRequestDTO.Name,
 		Cpf:         registerRequestDTO.Cpf,
 		Phone:       registerRequestDTO.Phone,
 		Address:     registerRequestDTO.Address,
-		Email:       registerRequestDTO.Email,
+		Email:       normalizedEmail,
 		Password:    hashedPassword,
-		Role:        "USER",
+		Role:        role,
 		Hidden:      false,
-		Online:      false,
 		FirstAccess: true,
 		TempCode:    0,
 		CreatedAt:   time.Now(),
@@ -167,30 +174,30 @@ func (s *userService) ValidateUserCode(inputCodeDto dto.InputCodeDto) (string, e
 	return "", fmt.Errorf("Código inválido.")
 }
 
-func (s *userService) UpdateAvailablityNursingService(userId string) (model.User, error) {
+func (s *userService) UpdateAvailablityNursingService(nurseId string) (model.Nurse, error) {
 
 	//busca o user
-	user, err := s.userRepository.FindUserById(userId)
+	nurse, err := s.userRepository.FindNurseById(nurseId)
 	if err != nil {
-		return model.User{}, fmt.Errorf("Erro ao buscar user by id.")
+		return model.Nurse{}, fmt.Errorf("Erro ao buscar user by id.")
 	}
 
-	if user.Online == true {
-		user.Online = false
+	if nurse.Online == true {
+		nurse.Online = false
 	} else {
-		user.Online = true
+		nurse.Online = true
 	}
 
-	userUpdates := bson.M{
-		"online":    user.Online,
+	nurseUpdates := bson.M{
+		"online":    nurse.Online,
 		"updatedAt": time.Now(),
 	}
 
 	//salve user com status true/false
-	user, err = s.userRepository.UpdateUser(userId, userUpdates)
+	nurse, err = s.userRepository.UpdateNurseFields(nurseId, nurseUpdates)
 	if err != nil {
-		return model.User{}, fmt.Errorf("Erro ao atualizar user.")
+		return model.Nurse{}, fmt.Errorf("Erro ao atualizar user.")
 	}
 
-	return user, nil
+	return nurse, nil
 }

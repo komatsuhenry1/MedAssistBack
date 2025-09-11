@@ -17,10 +17,13 @@ type UserRepository interface {
 	FindUserByEmail(email string) (model.User, error)
 	FindUserByCpf(cpf string) (model.User, error)
 	FindUserById(id string) (model.User, error)
+	FindNurseById(id string) (model.Nurse, error)
 	CreateUser(user *model.User) error
 	UpdateTempCode(userID string, code int) error
 	UpdateUser(userId string, userUpdated bson.M) (model.User, error)
 	UpdateUserFields(userId string, updates map[string]interface{}) (model.User, error)
+	UpdateNurse(nurseId string, nurseUpdated bson.M) (model.Nurse, error)
+	UpdateNurseFields(nurseId string, updates map[string]interface{}) (model.Nurse, error)
 }
 
 type userRepository struct {
@@ -84,6 +87,26 @@ func (r *userRepository) FindUserById(id string) (model.User, error) {
 	return user, nil
 }
 
+func (r *userRepository) FindNurseById(id string) (model.Nurse, error) {
+	var nurse model.Nurse
+
+	// converter para ObjectID
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nurse, fmt.Errorf("ID inválido: %w", err)
+	}
+
+	err = r.collection.FindOne(r.ctx, bson.M{"_id": objectID}).Decode(&nurse)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return model.Nurse{}, fmt.Errorf("Enfermeiro(a) não encontrado(a).")
+		}
+		return model.Nurse{}, err
+	} 
+
+	return nurse, nil
+}
+
 func (r *userRepository) CreateUser(user *model.User) error {
 	_, err := r.collection.InsertOne(r.ctx, user)
 	return err
@@ -132,6 +155,58 @@ func (r *userRepository) UpdateUser(userId string, userUpdates bson.M) (model.Us
 	}
 	return product, nil
 }
+
+
+func (r *userRepository) UpdateNurse(nurseId string, nurseUpdates bson.M) (model.Nurse, error){
+	if titleRaw, ok := nurseUpdates["title"]; ok {
+		title, ok := titleRaw.(string)
+		if ok {
+			formattedTitle := utils.CapitalizeFirstWord(title)
+			nurseUpdates["name"] = formattedTitle
+		}
+	}
+
+	nurse, err := r.UpdateNurseFields(nurseId, nurseUpdates)
+	if err != nil {
+		return model.Nurse{}, fmt.Errorf("Erro ao atualizar enfermeiro(a).")
+	}
+	return nurse, nil
+}
+
+
+
+func (r *userRepository) UpdateNurseFields(id string, updates map[string]interface{}) (model.Nurse, error) {
+	cleanUpdates := bson.M{}
+
+	for key, value := range updates {
+		if value != nil || value == "" {
+			cleanUpdates[key] = value
+		}
+	}
+
+	if len(cleanUpdates) == 0 {
+		return model.Nurse{}, fmt.Errorf("nenhum campo válido para atualizar")
+	}
+
+	cleanUpdates["updated_at"] = time.Now()
+
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return model.Nurse{}, fmt.Errorf("ID inválido")
+	}
+
+	update := bson.M{"$set": cleanUpdates}
+
+	_, err = r.collection.UpdateByID(context.TODO(), objID, update)
+	if err != nil {
+		return model.Nurse{}, err
+	}
+
+	return r.FindNurseById(id)
+}
+
+
+
 
 func (r *userRepository) UpdateUserFields(id string, updates map[string]interface{}) (model.User, error) {
 	cleanUpdates := bson.M{}
