@@ -29,3 +29,10 @@ type Nurse struct {
 	TempCode    int                `bson:"temp_code" json:"temp_code"`
 	UpdatedAt   time.Time          `bson:"updated_at" json:"updated_at"`
 }
+
+func (n Nurse) GetID() primitive.ObjectID { return n.ID }
+func (n Nurse) GetName() string             { return n.Name }
+func (n Nurse) GetEmail() string            { return n.Email }
+func (n Nurse) GetPassword() string         { return n.Password }
+func (n Nurse) GetRole() string             { return n.Role }
+func (n Nurse) IsHidden() bool              { return n.Hidden }

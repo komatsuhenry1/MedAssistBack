@@ -1,10 +1,11 @@
+// router/routes.go
 package router
 
 import (
 	"medassist/internal/di"
 	"time"
 
-	"github.com/gin-contrib/cors" // <-- 1. IMPORTE O PACOTE DE CORS
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,11 +19,12 @@ func InitializeRoutes() *gin.Engine {
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
-		MaxAge:           12 * time.Hour, // Tempo que o navegador pode cachear a resposta da preflight request
+		MaxAge:           12 * time.Hour,
 	}))
-	// ---------------------------------------------
 
 	SetupAuthRoutes(router, container)
+	SetupUserRoutes(router, container)
+	SetupNurseRoutes(router, container)
 
 	return router
 }
