@@ -17,19 +17,34 @@ func NewUserHandler(service UserService) *UserHandler {
 	return &UserHandler{service: service}
 }
 
-func (h *UserHandler) CreateUser(c *gin.Context) {
-	var userRequestDTO dto.RegisterRequestDTO
+func (h *UserHandler) UserRegister(c *gin.Context) {
+	var userRequestDTO dto.UserRegisterRequestDTO
 	if err := c.ShouldBindJSON(&userRequestDTO); err != nil {
 		utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	createdUser, err := h.service.Register(userRequestDTO)
+	createdUser, err := h.service.UserRegister(userRequestDTO)
 	if err != nil {
 		utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
 		return
 	}
 	utils.SendSuccessResponse(c, "usuário criado com sucesso", gin.H{"user": createdUser})
+}
+
+func (h *UserHandler) NurseRegister(c *gin.Context) {
+	var nurseRequestDTO dto.NurseRegisterRequestDTO
+	if err := c.ShouldBindJSON(&nurseRequestDTO); err != nil {
+		utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	createdNurse, err := h.service.NurseRegister(nurseRequestDTO)
+	if err != nil {
+		utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
+		return
+	}
+	utils.SendSuccessResponse(c, "usuário criado com sucesso", gin.H{"nurse": createdNurse})
 }
 
 func (h *UserHandler) LoginUser(c *gin.Context) {

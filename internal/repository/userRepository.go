@@ -19,6 +19,7 @@ type UserRepository interface {
 	FindUserById(id string) (model.User, error)
 	FindNurseById(id string) (model.Nurse, error)
 	CreateUser(user *model.User) error
+	CreateNurse(nurse *model.Nurse) error
 	UpdateTempCode(userID string, code int) error
 	UpdateUser(userId string, userUpdated bson.M) (model.User, error)
 	UpdateUserFields(userId string, updates map[string]interface{}) (model.User, error)
@@ -27,14 +28,16 @@ type UserRepository interface {
 }
 
 type userRepository struct {
-	collection *mongo.Collection
-	ctx        context.Context
+	collection       *mongo.Collection
+	nursesCollection *mongo.Collection
+	ctx              context.Context
 }
 
 func NewUserRepository(db *mongo.Database) UserRepository {
 	return &userRepository{
-		collection: db.Collection("users"),
-		ctx:        context.Background(),
+		collection:       db.Collection("users"),
+		nursesCollection: db.Collection("nurses"),
+		ctx:              context.Background(),
 	}
 }
 
@@ -82,7 +85,7 @@ func (r *userRepository) FindUserById(id string) (model.User, error) {
 			return model.User{}, fmt.Errorf("usuário não encontrado")
 		}
 		return model.User{}, err
-	} 
+	}
 
 	return user, nil
 }
@@ -96,19 +99,24 @@ func (r *userRepository) FindNurseById(id string) (model.Nurse, error) {
 		return nurse, fmt.Errorf("ID inválido: %w", err)
 	}
 
-	err = r.collection.FindOne(r.ctx, bson.M{"_id": objectID}).Decode(&nurse)
+	err = r.nursesCollection.FindOne(r.ctx, bson.M{"_id": objectID}).Decode(&nurse)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return model.Nurse{}, fmt.Errorf("Enfermeiro(a) não encontrado(a).")
+			return model.Nurse{}, fmt.Errorf("enfermeiro(a) não encontrado(a)")
 		}
 		return model.Nurse{}, err
-	} 
+	}
 
 	return nurse, nil
 }
 
 func (r *userRepository) CreateUser(user *model.User) error {
 	_, err := r.collection.InsertOne(r.ctx, user)
+	return err
+}
+
+func (r *userRepository) CreateNurse(nurse *model.Nurse) error {
+	_, err := r.nursesCollection.InsertOne(r.ctx, nurse)
 	return err
 }
 
@@ -140,7 +148,7 @@ func (r *userRepository) UpdateTempCode(userID string, code int) error {
 	return nil
 }
 
-func (r *userRepository) UpdateUser(userId string, userUpdates bson.M) (model.User, error){
+func (r *userRepository) UpdateUser(userId string, userUpdates bson.M) (model.User, error) {
 	if titleRaw, ok := userUpdates["title"]; ok {
 		title, ok := titleRaw.(string)
 		if ok {
@@ -156,8 +164,7 @@ func (r *userRepository) UpdateUser(userId string, userUpdates bson.M) (model.Us
 	return product, nil
 }
 
-
-func (r *userRepository) UpdateNurse(nurseId string, nurseUpdates bson.M) (model.Nurse, error){
+func (r *userRepository) UpdateNurse(nurseId string, nurseUpdates bson.M) (model.Nurse, error) {
 	if titleRaw, ok := nurseUpdates["title"]; ok {
 		title, ok := titleRaw.(string)
 		if ok {
@@ -168,18 +175,16 @@ func (r *userRepository) UpdateNurse(nurseId string, nurseUpdates bson.M) (model
 
 	nurse, err := r.UpdateNurseFields(nurseId, nurseUpdates)
 	if err != nil {
-		return model.Nurse{}, fmt.Errorf("Erro ao atualizar enfermeiro(a).")
+		return model.Nurse{}, fmt.Errorf("erro ao atualizar enfermeiro(a)")
 	}
 	return nurse, nil
 }
-
-
 
 func (r *userRepository) UpdateNurseFields(id string, updates map[string]interface{}) (model.Nurse, error) {
 	cleanUpdates := bson.M{}
 
 	for key, value := range updates {
-		if value != nil || value == "" {
+		if value != nil {
 			cleanUpdates[key] = value
 		}
 	}
@@ -197,7 +202,7 @@ func (r *userRepository) UpdateNurseFields(id string, updates map[string]interfa
 
 	update := bson.M{"$set": cleanUpdates}
 
-	_, err = r.collection.UpdateByID(context.TODO(), objID, update)
+	_, err = r.nursesCollection.UpdateByID(context.TODO(), objID, update)
 	if err != nil {
 		return model.Nurse{}, err
 	}
@@ -205,14 +210,11 @@ func (r *userRepository) UpdateNurseFields(id string, updates map[string]interfa
 	return r.FindNurseById(id)
 }
 
-
-
-
 func (r *userRepository) UpdateUserFields(id string, updates map[string]interface{}) (model.User, error) {
 	cleanUpdates := bson.M{}
 
 	for key, value := range updates {
-		if value != nil || value == "" {
+		if value != nil {
 			cleanUpdates[key] = value
 		}
 	}

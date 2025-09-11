@@ -2,7 +2,6 @@ package model
 
 import (
 	"time"
-
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -20,7 +19,7 @@ type Nurse struct {
 	Shift           string             `bson:"shift" json:"shift"` // manhã, tarde, noite
 	Department      string             `bson:"department" json:"department"` // setor/hospital onde trabalha
 	YearsExperience int                `bson:"years_experience" json:"years_experience"`
-	Available       bool               `bson:"available" json:"available"` // disponível para consultas
+	// Available       bool               `bson:"available" json:"available"` // disponível para consultas
 
 	Hidden      bool               `bson:"hidden" json:"hidden"`
 	Role        string             `bson:"role" json:"role" binding:"required"`

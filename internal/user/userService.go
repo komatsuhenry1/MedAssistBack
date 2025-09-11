@@ -14,49 +14,26 @@ import (
 )
 
 type UserService interface {
-	Register(registerRequestDTO dto.RegisterRequestDTO) (model.User, error)
+	UserRegister(registerRequestDTO dto.UserRegisterRequestDTO) (model.User, error)
+	NurseRegister(nurseRequestDTO dto.NurseRegisterRequestDTO) (model.Nurse, error)
 	Login(loginRequestDTO dto.LoginRequestDTO) (string, model.User, error)
 	SendCodeToEmail(emailAuthRequestDTO dto.EmailAuthRequestDTO) (dto.CodeResponseDTO, error)
 	ValidateUserCode(inputCodeDto dto.InputCodeDto) (string, error)
 	UpdateAvailablityNursingService(userId string) (model.Nurse, error)
-//	GetAllVisits() ([]model.Visit, error)
+	// GetAllVisits() ([]model.Visit, error)
 }
 
 type userService struct {
 	userRepository repository.UserRepository
 }
 
+
 func NewUserService(userRepository repository.UserRepository) UserService {
 	return &userService{userRepository: userRepository}
 }
 
-func (s *userService) Login(loginRequestDTO dto.LoginRequestDTO) (string, model.User, error) {
-	if err := loginRequestDTO.Validate(); err != nil {
-		return "", model.User{}, err
-	}
 
-	loginRequestDTO.Email = strings.ToLower(loginRequestDTO.Email)
-	user, err := s.userRepository.FindUserByEmail(loginRequestDTO.Email)
-	if err != nil {
-		return "", model.User{}, fmt.Errorf("usuário ou senha incorretos")
-	}
-	if user.Hidden {
-		return "", model.User{}, fmt.Errorf("usuário não permitido para login")
-	}
-	if !utils.ComparePassword(user.Password, loginRequestDTO.Password) {
-		return "", model.User{}, fmt.Errorf("usuário ou senha incorretos")
-	}
-
-	token, err := utils.GenerateToken(user.ID.Hex(), user.Role, user.Hidden)
-	if err != nil {
-		return "", model.User{}, fmt.Errorf("erro ao gerar token: %w", err)
-	}
-
-	// retornar usuario e token
-	return token, user, nil
-}
-
-func (s *userService) Register(registerRequestDTO dto.RegisterRequestDTO) (model.User, error) {
+func (s *userService) UserRegister(registerRequestDTO dto.UserRegisterRequestDTO) (model.User, error){
 	if err := registerRequestDTO.Validate(); err != nil {
 		return model.User{}, err
 	}
@@ -82,12 +59,12 @@ func (s *userService) Register(registerRequestDTO dto.RegisterRequestDTO) (model
 		return model.User{}, fmt.Errorf("erro ao criptografar senha: %w", err)
 	}
 
-	var role string
-	if registerRequestDTO.Nurse {
-		role = "NURSE"
-	} else {
-		role = "USER"
-	}
+	// var role string
+	// if registerRequestDTO.Nurse {
+	// 	role = "NURSE"
+	// } else {
+	// 	role = "USER"
+	// }
 
 	user := model.User{
 		ID:          primitive.NewObjectID(),
@@ -97,7 +74,7 @@ func (s *userService) Register(registerRequestDTO dto.RegisterRequestDTO) (model
 		Address:     registerRequestDTO.Address,
 		Email:       normalizedEmail,
 		Password:    hashedPassword,
-		Role:        role,
+		Role:        "USER",
 		Hidden:      false,
 		FirstAccess: true,
 		TempCode:    0,
@@ -117,6 +94,98 @@ func (s *userService) Register(registerRequestDTO dto.RegisterRequestDTO) (model
 
 	return user, nil
 }
+
+func (s *userService) NurseRegister(nurseRequestDTO dto.NurseRegisterRequestDTO) (model.Nurse, error){
+	if err := nurseRequestDTO.Validate(); err != nil { // valida se nao falta nenhum campo
+		return model.Nurse{}, err
+	}
+
+	normalizedEmail, err := utils.EmailRegex(nurseRequestDTO.Email)
+	if err != nil {
+		return model.Nurse{}, fmt.Errorf("email invalido")
+	}
+
+	// Verifica se usuário existe (sem erro se não achar)
+	_, err = s.userRepository.FindUserByEmail(normalizedEmail)
+	if err == nil {
+		return model.Nurse{}, fmt.Errorf("O(A) enfermeiro(a) com o email '%s' ja existe", normalizedEmail)
+	}
+
+	_, err = s.userRepository.FindUserByCpf(nurseRequestDTO.Cpf)
+	if err == nil {
+		return model.Nurse{}, fmt.Errorf("O(A) enfermeiro(a) com o CPF '%s' ja existe", nurseRequestDTO.Cpf)
+	}
+
+	hashedPassword, err := utils.HashPassword(nurseRequestDTO.Password)
+	if err != nil {
+		return model.Nurse{}, fmt.Errorf("erro ao criptografar senha: %w", err)
+	}
+
+	nurse := model.Nurse{
+		ID:          primitive.NewObjectID(),
+		Name:        nurseRequestDTO.Name,
+		Cpf:         nurseRequestDTO.Cpf,
+		Phone:       nurseRequestDTO.Phone,
+		Address:     nurseRequestDTO.Address,
+		Email:       normalizedEmail,
+		Password:    hashedPassword,
+
+		LicenseNumber:   nurseRequestDTO.LicenseNumber,
+		Specialization:  nurseRequestDTO.Specialization,
+		Shift:           nurseRequestDTO.Shift,
+		Department:      nurseRequestDTO.Department,
+		YearsExperience: nurseRequestDTO.YearsExperience,
+
+		Role:        "NURSE",
+		Hidden:      false,
+		Online:      false,
+		FirstAccess: true,
+		TempCode:    0,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+
+	if err := s.userRepository.CreateNurse(&nurse); err != nil {
+		return model.Nurse{}, fmt.Errorf("erro ao criar usuário: %w", err)
+	}
+
+	password := "password string test"
+
+	if err := utils.SendEmail(nurseRequestDTO.Email, password); err != nil {
+		return model.Nurse{}, fmt.Errorf("erro ao enviar e-mail: %w", err)
+	}
+
+	return nurse, nil
+}
+
+
+
+func (s *userService) Login(loginRequestDTO dto.LoginRequestDTO) (string, model.User, error) {
+	if err := loginRequestDTO.Validate(); err != nil {
+		return "", model.User{}, err
+	}
+
+	loginRequestDTO.Email = strings.ToLower(loginRequestDTO.Email)
+	user, err := s.userRepository.FindUserByEmail(loginRequestDTO.Email)
+	if err != nil {
+		return "", model.User{}, fmt.Errorf("Credenciais incorretas.")
+	}
+	if user.Hidden {
+		return "", model.User{}, fmt.Errorf("Usuário não permitido para login.")
+	}
+	if !utils.ComparePassword(user.Password, loginRequestDTO.Password) {
+		return "", model.User{}, fmt.Errorf("Credenciais incorretas.")
+	}
+
+	token, err := utils.GenerateToken(user.ID.Hex(), user.Role, user.Hidden)
+	if err != nil {
+		return "", model.User{}, fmt.Errorf("erro ao gerar token: %w", err)
+	}
+
+	// retornar usuario e token
+	return token, user, nil
+}
+
 
 func (s *userService) SendCodeToEmail(emailAuthRequestDTO dto.EmailAuthRequestDTO) (dto.CodeResponseDTO, error) {
 
@@ -152,6 +221,7 @@ func (s *userService) SendCodeToEmail(emailAuthRequestDTO dto.EmailAuthRequestDT
 	return codeResponseDTO, nil
 }
 
+
 func (s *userService) ValidateUserCode(inputCodeDto dto.InputCodeDto) (string, error) {
 
 	//busca o usuario pelo email
@@ -173,6 +243,7 @@ func (s *userService) ValidateUserCode(inputCodeDto dto.InputCodeDto) (string, e
 
 	return "", fmt.Errorf("Código inválido.")
 }
+
 
 func (s *userService) UpdateAvailablityNursingService(nurseId string) (model.Nurse, error) {
 
