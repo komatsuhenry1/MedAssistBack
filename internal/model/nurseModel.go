@@ -26,7 +26,7 @@ type Nurse struct {
 	LicenseDocumentID     primitive.ObjectID `bson:"license_document_id,omitempty"`
 	QualificationsID      primitive.ObjectID `bson:"qualifications_id,omitempty"`
 	GeneralRegisterID     primitive.ObjectID `bson:"general_register_id,omitempty"`
-	ResidenceComprovantid primitive.ObjectID `bson:"residence_comprovante_id,omitempty"`
+	ResidenceComprovantId primitive.ObjectID `bson:"residence_comprovante_id,omitempty"`
 
 	Hidden      bool      `bson:"hidden" json:"hidden"`
 	Role        string    `bson:"role" json:"role" binding:"required"`

@@ -1,9 +1,10 @@
 package admin
 
 import (
-	"github.com/gin-gonic/gin"
 	"medassist/utils"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type AdminHandler struct {
@@ -14,16 +15,25 @@ func NewAdminHandler(adminService AdminService) *AdminHandler {
 	return &AdminHandler{adminService: adminService}
 }
 
-func (h *AdminHandler) Dashboard(c *gin.Context){
-
+func (h *AdminHandler) Dashboard(c *gin.Context) {
+	utils.SendSuccessResponse(c, "dashboard", http.StatusOK)
 }
 
 func (h *AdminHandler) GetRegistersToApprove(c *gin.Context) {
+	utils.SendSuccessResponse(c, "Nurses registers list pending to approve", http.StatusOK)
 
 }
 
 func (h *AdminHandler) GetDocuments(c *gin.Context) {
+	nurseId := c.Param("id")
 
+	documents, err := h.adminService.GetNurseDocumentsToAnalisys(nurseId)
+	if err != nil {
+		utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	utils.SendSuccessResponse(c, "Documentos retornados com sucesso.", documents)	
 }
 
 func (h *AdminHandler) ApproveNurseRegister(c *gin.Context) {
@@ -35,6 +45,5 @@ func (h *AdminHandler) ApproveNurseRegister(c *gin.Context) {
 		return
 	}
 
-	utils.SendSuccessResponse(c, msg, nil)
+	utils.SendSuccessResponse(c, msg, gin.H{"status_code": http.StatusOK})
 }
-

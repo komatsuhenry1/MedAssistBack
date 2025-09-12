@@ -180,7 +180,7 @@ func (s *authService) NurseRegister(nurseRequestDTO dto.NurseRegisterRequestDTO,
 			case "general_register":
 				nurse.GeneralRegisterID = fileID
 			case "residence_comprovant":
-				nurse.ResidenceComprovantid = fileID
+				nurse.ResidenceComprovantId = fileID
 			}
 		}
 	
