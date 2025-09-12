@@ -6,12 +6,14 @@ import (
 	"medassist/internal/nurse"
 	"medassist/internal/repository"
 	"medassist/internal/user"
+	"medassist/internal/admin"
 )
 
 type Container struct {
 	AuthHandler  *auth.AuthHandler
 	UserHandler  *user.UserHandler
 	NurseHandler *nurse.NurseHandler
+	AdminHandler *admin.AdminHandler
 }
 
 func NewContainer() *Container {
@@ -21,16 +23,19 @@ func NewContainer() *Container {
 	userRepository := repository.NewUserRepository(db)
 	nurseRepository := repository.NewNurseRepository(db)
 
-	userService := user.NewUserService(userRepository)
 	authService := auth.NewAuthService(userRepository, nurseRepository)
+	adminService := admin.NewAdminService(userRepository, nurseRepository)
+	userService := user.NewUserService(userRepository)
 	nurseService := nurse.NewNurseService(nurseRepository)
 
-	userHandler := user.NewUserHandler(userService)
 	authHandler := auth.NewAuthHandler(authService)
+	adminHandler := admin.NewAdminHandler(adminService)
+	userHandler := user.NewUserHandler(userService)
 	nurseHandler := nurse.NewNurseHandler(nurseService)
 
 	return &Container{
 		AuthHandler:  authHandler,
+		AdminHandler: adminHandler,
 		UserHandler:  userHandler,
 		NurseHandler: nurseHandler,
 	}

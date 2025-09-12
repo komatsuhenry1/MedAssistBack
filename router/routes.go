@@ -25,6 +25,7 @@ func InitializeRoutes() *gin.Engine {
 	SetupAuthRoutes(router, container)
 	SetupUserRoutes(router, container)
 	SetupNurseRoutes(router, container)
+	SetupAdminRoutes(router, container)
 
 	return router
 }
