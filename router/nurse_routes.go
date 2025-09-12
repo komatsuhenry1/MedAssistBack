@@ -11,5 +11,6 @@ func SetupNurseRoutes(r *gin.Engine, container *di.Container) {
 	nurse := r.Group("/nurse")
 	{
 		nurse.PATCH("/online", middleware.AuthNurse(), container.NurseHandler.ChangeOnlineNurse)
+		// nurse.PATCH("/dashboard", middleware.AuthNurse(), container.NurseHandler.ChangeOnlineNurse)
 	}
 }

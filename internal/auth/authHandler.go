@@ -5,6 +5,7 @@ import (
 	"medassist/internal/auth/dto"
 	"medassist/utils"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -33,43 +34,71 @@ func (h *AuthHandler) UserRegister(c *gin.Context) {
 }
 
 func (h *AuthHandler) NurseRegister(c *gin.Context) {
+
+	yearsExp, _ := strconv.Atoi(c.PostForm("years_experience"))
+
 	var nurseRequestDTO dto.NurseRegisterRequestDTO
-	if err := c.ShouldBindJSON(&nurseRequestDTO); err != nil {
-		utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
-		return
-	}
+	nurseRequestDTO.Name = c.PostForm("name")
+	nurseRequestDTO.Email = c.PostForm("email")
+	nurseRequestDTO.Phone = c.PostForm("phone")
+	nurseRequestDTO.Address = c.PostForm("address")
+	nurseRequestDTO.Cpf = c.PostForm("cpf")
+	nurseRequestDTO.PixKey = c.PostForm("pix_key")
+	nurseRequestDTO.Password = c.PostForm("password")
+	nurseRequestDTO.LicenseNumber = c.PostForm("license_number")
+	nurseRequestDTO.Specialization = c.PostForm("specialization")
+	nurseRequestDTO.Shift = c.PostForm("shift")
+	nurseRequestDTO.Department = c.PostForm("department")
+	nurseRequestDTO.YearsExperience = yearsExp
 
-	createdNurse, err := h.authService.NurseRegister(nurseRequestDTO)
+	form, err := c.MultipartForm()
 	if err != nil {
-		utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
+		utils.SendErrorResponse(c, "Erro ao processar formulário: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	utils.SendSuccessResponse(c, "usuário criado com sucesso", gin.H{"nurse": createdNurse})
-}
 
-func (h *AuthHandler) LoginUser(c *gin.Context) {
-    var userLoginRequestDTO dto.LoginRequestDTO
-    if err := c.ShouldBindJSON(&userLoginRequestDTO); err != nil {
-        utils.SendErrorResponse(c, "Requisição inválida", http.StatusBadRequest)
-        return
-    }
+	files := form.File // todos arquivos enviados
 
-    token, authUser, err := h.authService.LoginUser(userLoginRequestDTO)
+	requiredFiles := []string{"license_document", "qualifications", "general_register", "residence_comprovant"}
+	for _, fieldName := range requiredFiles {
+		if _, ok := files[fieldName]; !ok || len(files[fieldName]) == 0 {
+			utils.SendErrorResponse(c, "Arquivo obrigatório não enviado: "+fieldName, http.StatusBadRequest)
+			return
+		}
+	}
+
+    createdNurse, err := h.authService.NurseRegister(nurseRequestDTO, files) // passa files para poder ser salvo no mongo
     if err != nil {
         utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
         return
     }
-    
-    utils.SendSuccessResponse(c, "Usuário logado com sucesso.",
-        gin.H{
-            "token": token,
-            "user": gin.H{
-                "id":    authUser.ID,
-                "name":  authUser.Name,
-                "email": authUser.Email,
-                "role":  authUser.Role,
-            },
-        })
+
+	utils.SendSuccessResponse(c, "usuário criado com sucesso", gin.H{"nurse": createdNurse})
+}
+
+func (h *AuthHandler) LoginUser(c *gin.Context) {
+	var userLoginRequestDTO dto.LoginRequestDTO
+	if err := c.ShouldBindJSON(&userLoginRequestDTO); err != nil {
+		utils.SendErrorResponse(c, "Requisição inválida", http.StatusBadRequest)
+		return
+	}
+
+	token, authUser, err := h.authService.LoginUser(userLoginRequestDTO)
+	if err != nil {
+		utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	utils.SendSuccessResponse(c, "Usuário logado com sucesso.",
+		gin.H{
+			"token": token,
+			"user": gin.H{
+				"id":    authUser.ID,
+				"name":  authUser.Name,
+				"email": authUser.Email,
+				"role":  authUser.Role,
+			},
+		})
 }
 
 func (h *AuthHandler) SendCode(c *gin.Context) {

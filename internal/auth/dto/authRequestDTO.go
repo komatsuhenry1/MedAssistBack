@@ -61,6 +61,7 @@ type NurseRegisterRequestDTO struct {
 	Shift           string `json:"shift"` // turno
 	Department      string `json:"department"`
 	YearsExperience int    `json:"years_experience"`
+	
 }
 
 func (u *NurseRegisterRequestDTO) Validate() error {

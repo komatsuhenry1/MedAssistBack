@@ -65,13 +65,13 @@ func SendEmail(email string, password string) error {
 	</head>
 	<body>
 		<div class="container">
-			<h2>🔑 Sua Senha de Acesso</h2>
+			<h2>🔑 Sua conta está em analise para ser cadastrada no sistema como nurse</h2>
 			<p>Olá,</p>
 			<p>Seja bem-vindo! Sua conta foi criada com sucesso.</p>
 			<p><strong>E-mail cadastrado:</strong></p>
 			<div class="code-box">%s</div>
 
-			<p><strong>Sua senha de acesso inicial:</strong></p>
+			<p><strong>Sua conta está em analise para ser cadastrada no sistema como nurse:</strong></p>
 			<div class="code-box">%s</div>
 
 			<p>⚠️ Por motivos de segurança, recomendamos que você altere sua senha assim que fizer o primeiro login.</p>

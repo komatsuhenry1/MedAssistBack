@@ -8,13 +8,14 @@ import (
 	"medassist/utils"
 	"strings"
 	"time"
+	"mime/multipart"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type AuthService interface {
 	UserRegister(registerRequestDTO dto.UserRegisterRequestDTO) (model.User, error)
-	NurseRegister(nurseRequestDTO dto.NurseRegisterRequestDTO) (model.Nurse, error)
+	NurseRegister(nurseRequestDTO dto.NurseRegisterRequestDTO, files map[string][]*multipart.FileHeader) (model.Nurse, error)
 	LoginUser(loginRequestDTO dto.LoginRequestDTO) (string, dto.AuthUser, error)
 	SendCodeToEmail(emailAuthRequestDTO dto.EmailAuthRequestDTO) (dto.CodeResponseDTO, error)
 	ValidateUserCode(inputCodeDto dto.InputCodeDto) (string, error)
@@ -91,7 +92,7 @@ func (s *authService) UserRegister(registerRequestDTO dto.UserRegisterRequestDTO
 	return user, nil
 }
 
-func (s *authService) NurseRegister(nurseRequestDTO dto.NurseRegisterRequestDTO) (model.Nurse, error) {
+func (s *authService) NurseRegister(nurseRequestDTO dto.NurseRegisterRequestDTO, files map[string][]*multipart.FileHeader) (model.Nurse, error) {
 	if err := nurseRequestDTO.Validate(); err != nil { // valida se nao falta nenhum campo
 		return model.Nurse{}, err
 	}
@@ -117,6 +118,8 @@ func (s *authService) NurseRegister(nurseRequestDTO dto.NurseRegisterRequestDTO)
 		return model.Nurse{}, fmt.Errorf("erro ao criptografar senha: %w", err)
 	}
 
+	// FUNCAO QUE VALIDA O RG / LICENSE_ID / ANTECEDENTES
+
 	nurse := model.Nurse{
 		ID:       primitive.NewObjectID(),
 		Name:     nurseRequestDTO.Name,
@@ -126,7 +129,7 @@ func (s *authService) NurseRegister(nurseRequestDTO dto.NurseRegisterRequestDTO)
 		Email:    normalizedEmail,
 		Password: hashedPassword,
 		PixKey:   nurseRequestDTO.PixKey,
-
+		VerificationSeal: false,
 
 		LicenseNumber:   nurseRequestDTO.LicenseNumber,
 		Specialization:  nurseRequestDTO.Specialization,
@@ -143,9 +146,45 @@ func (s *authService) NurseRegister(nurseRequestDTO dto.NurseRegisterRequestDTO)
 		UpdatedAt:   time.Now(),
 	}
 
-	if err := s.nurseRepository.CreateNurse(&nurse); err != nil {
-		return model.Nurse{}, fmt.Errorf("erro ao criar usuário: %w", err)
-	}
+	    // faz o upload de todos os arquivos e preenche os IDs no objeto nurse
+		for fieldName, fileHeaders := range files {
+			if len(fileHeaders) == 0 {
+				continue // pula se não houver arquivo para este campo
+			}
+			fileHeader := fileHeaders[0] // pegamos apenas o primeiro arquivo por campo
+	
+			file, err := fileHeader.Open()
+			if err != nil {
+				return model.Nurse{}, fmt.Errorf("erro ao abrir o arquivo %s: %w", fileHeader.Filename, err)
+			}
+			defer file.Close()
+			
+			// cria um nome de arquivo único e descritivo
+			uniqueFileName := fmt.Sprintf("%s_%s_%s", nurse.ID.Hex(), fieldName, fileHeader.Filename) // <nurse_id><license_number><image_name>
+	
+			// usa o método genérico do repositório
+			fileID, err := s.nurseRepository.UploadFile(file, uniqueFileName) // sobe pro mongodb esse arquivo e gera o registroem fs.files
+			if err != nil {
+				// se um upload falhar, a operação inteira é cancelada
+				return model.Nurse{}, fmt.Errorf("erro no upload do arquivo %s: %w", fileHeader.Filename, err)
+			}
+			
+			// atribui o id ao campo correto no nosso objeto `nurse`
+			switch fieldName {
+			case "license_document":
+				nurse.LicenseDocumentID = fileID
+			case "qualifications":
+				nurse.QualificationsID = fileID
+			case "general_register":
+				nurse.GeneralRegisterID = fileID
+			case "residence_comprovant":
+				nurse.ResidenceComprovantid = fileID
+			}
+		}
+	
+    if err := s.nurseRepository.CreateNurse(&nurse); err != nil {
+        return model.Nurse{}, fmt.Errorf("erro ao criar o registro final do enfermeiro(a): %w", err)
+    }
 
 	password := "password string test"
 

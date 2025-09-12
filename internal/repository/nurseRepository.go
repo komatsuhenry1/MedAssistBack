@@ -8,10 +8,12 @@ import (
 	"medassist/internal/auth/dto"
 	"medassist/utils"
 	"time"
+	"io"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/gridfs"
 )
 
 type NurseRepository interface {
@@ -22,17 +24,26 @@ type NurseRepository interface {
 	UpdateTempCode(userID string, code int) error
 	UpdateNurse(nurseId string, userUpdated bson.M) (model.Nurse, error)
 	UpdateNurseFields(userId string, updates map[string]interface{}) (model.Nurse, error)
+	SetLicenseDocumentID(nurseID, documentID primitive.ObjectID) error
+	UploadFile(file io.Reader, fileName string) (primitive.ObjectID, error)
 }
 
 type nurseRepository struct {
 	collection *mongo.Collection
 	ctx        context.Context
+	bucket     *gridfs.Bucket
 }
 
 func NewNurseRepository(db *mongo.Database) NurseRepository {
+	bucket, err := gridfs.NewBucket(db)
+	if err != nil {
+		panic(err)
+	}
+
 	return &nurseRepository{
 		collection: db.Collection("nurses"),
 		ctx:        context.Background(),
+		bucket:     bucket,
 	}
 }
 
@@ -90,6 +101,29 @@ func (r *nurseRepository) FindNurseById(id string) (model.Nurse, error) {
 
 func (r *nurseRepository) CreateNurse(nurse *model.Nurse) error {
 	_, err := r.collection.InsertOne(r.ctx, nurse)
+	return err
+}
+
+func (r *nurseRepository) UploadFile(file io.Reader, fileName string) (primitive.ObjectID, error) {
+    uploadStream, err := r.bucket.OpenUploadStream(fileName)
+    if err != nil {
+        return primitive.NilObjectID, err
+    }
+    defer uploadStream.Close()
+
+    if _, err := io.Copy(uploadStream, file); err != nil {
+        return primitive.NilObjectID, err
+    }
+
+    fileID := uploadStream.FileID.(primitive.ObjectID)
+    return fileID, nil
+}
+
+
+func (r *nurseRepository) SetLicenseDocumentID(nurseID, documentID primitive.ObjectID) error {
+	filter := bson.M{"_id": nurseID}
+	update := bson.M{"$set": bson.M{"license_document_id": documentID, "updated_at": time.Now()}}
+	_, err := r.collection.UpdateOne(r.ctx, filter, update)
 	return err
 }
 
