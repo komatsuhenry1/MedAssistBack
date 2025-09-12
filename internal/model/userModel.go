@@ -22,10 +22,3 @@ type User struct {
 	UpdatedAt   time.Time          `bson:"updated_at" json:"updated_at"`
 }
 
-func (u User) GetID() primitive.ObjectID { return u.ID }
-func (u User) GetName() string             { return u.Name }
-func (u User) GetEmail() string            { return u.Email }
-func (u User) GetPassword() string         { return u.Password }
-func (u User) GetRole() string             { return u.Role }
-func (u User) IsHidden() bool              { return u.Hidden }
-

@@ -125,6 +125,8 @@ func (s *authService) NurseRegister(nurseRequestDTO dto.NurseRegisterRequestDTO)
 		Address:  nurseRequestDTO.Address,
 		Email:    normalizedEmail,
 		Password: hashedPassword,
+		PixKey:   nurseRequestDTO.PixKey,
+
 
 		LicenseNumber:   nurseRequestDTO.LicenseNumber,
 		Specialization:  nurseRequestDTO.Specialization,

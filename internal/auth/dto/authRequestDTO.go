@@ -54,6 +54,7 @@ type NurseRegisterRequestDTO struct {
 	Phone           string `json:"phone"`
 	Address         string `json:"address"`
 	Cpf             string `json:"cpf"`
+	PixKey          string `json:"pix_key"`
 	Password        string `json:"password"`
 	LicenseNumber   string `json:"license_number"`
 	Specialization  string `json:"specialization"`
