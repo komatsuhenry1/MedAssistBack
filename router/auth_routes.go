@@ -15,5 +15,6 @@ func SetupAuthRoutes(r *gin.Engine, container *di.Container) {
 		auth.POST("/login", container.AuthHandler.LoginUser)
 		auth.PATCH("/code", container.AuthHandler.SendCode)
 		auth.POST("/validate", container.AuthHandler.ValidateCode)
+		auth.POST("/adm", container.AuthHandler.FirstLoginAdmin)
 	}
 }

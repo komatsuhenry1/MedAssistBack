@@ -22,6 +22,7 @@ type UserRepository interface {
 	UpdateTempCode(userID string, code int) error
 	UpdateUser(userId string, userUpdated bson.M) (model.User, error)
 	UpdateUserFields(userId string, updates map[string]interface{}) (model.User, error)
+	UserExistsByEmail(email string) (bool, error)
 }
 
 type userRepository struct {
@@ -50,8 +51,6 @@ func (r *userRepository) FindUserByEmail(email string) (dto.AuthUser, error) {
     return authUser, nil
 }
 
-
-
 func (r *userRepository) FindUserByCpf(cpf string) (model.User, error) {
 
 	var user model.User
@@ -65,7 +64,6 @@ func (r *userRepository) FindUserByCpf(cpf string) (model.User, error) {
 
 	return user, nil
 }
-
 
 func (r *userRepository) FindUserById(id string) (model.User, error) {
 	var user model.User
@@ -87,13 +85,10 @@ func (r *userRepository) FindUserById(id string) (model.User, error) {
 	return user, nil
 }
 
-
 func (r *userRepository) CreateUser(user *model.User) error {
 	_, err := r.collection.InsertOne(r.ctx, user)
 	return err
 }
-
-
 
 func (r *userRepository) UpdateTempCode(userID string, code int) error {
 
@@ -123,7 +118,6 @@ func (r *userRepository) UpdateTempCode(userID string, code int) error {
 	return nil
 }
 
-
 func (r *userRepository) UpdateUser(userId string, userUpdates bson.M) (model.User, error) {
 	if titleRaw, ok := userUpdates["title"]; ok {
 		title, ok := titleRaw.(string)
@@ -139,7 +133,6 @@ func (r *userRepository) UpdateUser(userId string, userUpdates bson.M) (model.Us
 	}
 	return product, nil
 }
-
 
 func (r *userRepository) UpdateUserFields(id string, updates map[string]interface{}) (model.User, error) {
 	cleanUpdates := bson.M{}
@@ -169,4 +162,15 @@ func (r *userRepository) UpdateUserFields(id string, updates map[string]interfac
 	}
 
 	return r.FindUserById(id)
+}
+
+func (r *userRepository) UserExistsByEmail(email string) (bool, error) {
+	err := r.collection.FindOne(r.ctx, bson.M{"email": email}).Err()
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }

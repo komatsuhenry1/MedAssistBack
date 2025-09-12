@@ -136,3 +136,13 @@ func (h *AuthHandler) ValidateCode(c *gin.Context) {
 
 	utils.SendSuccessResponse(c, "Código enviado com sucesso.", token)
 }
+
+func (h *AuthHandler) FirstLoginAdmin(c *gin.Context) {
+	err := h.authService.FirstLoginAdmin()
+	if err != nil {
+		utils.SendErrorResponse(c, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	utils.SendSuccessResponse(c, "Usuário inicial criado com sucesso.", "ADMIN_CREATED")
+}

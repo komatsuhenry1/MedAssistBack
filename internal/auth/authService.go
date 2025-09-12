@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 	"mime/multipart"
+	"os"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -19,6 +20,7 @@ type AuthService interface {
 	LoginUser(loginRequestDTO dto.LoginRequestDTO) (string, dto.AuthUser, error)
 	SendCodeToEmail(emailAuthRequestDTO dto.EmailAuthRequestDTO) (dto.CodeResponseDTO, error)
 	ValidateUserCode(inputCodeDto dto.InputCodeDto) (string, error)
+	FirstLoginAdmin() error
 }
 
 type authService struct {
@@ -286,4 +288,40 @@ func (s *authService) ValidateUserCode(inputCodeDto dto.InputCodeDto) (string, e
 	}
 
 	return "", fmt.Errorf("Código inválido.")
+}
+
+func (s *authService) FirstLoginAdmin() error {
+
+	adminPassword := os.Getenv("ADMIN_PASSWORD")
+	adminName := os.Getenv("ADMIN_NAME")
+	adminEmail := os.Getenv("ADMIN_EMAIL")
+
+	exists, err := s.userRepository.UserExistsByEmail(adminEmail)
+	if err != nil {
+		return fmt.Errorf("erro ao encontrar: %w", err)
+	} else if exists {
+		return fmt.Errorf("o usuário já existe")
+	}
+
+	hashedPassword, err := utils.HashPassword(adminPassword)
+	if err != nil {
+		return fmt.Errorf("erro ao atualizar campos do usuario: %w", err)
+	}
+
+	adminUser := model.User{
+		Name:        adminName,
+		Email:       adminEmail,
+		Password:    hashedPassword, // hash da ADMIN_PASSWORD na .env
+		FirstAccess: false,
+		Role:        "ADMIN",
+	}
+
+	err = s.userRepository.CreateUser(&adminUser)
+	if err != nil {
+		return err
+	}
+
+	utils.SendEmailForAdmin(adminEmail)
+
+	return nil
 }
