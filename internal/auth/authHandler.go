@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type AuthHandler struct {
@@ -69,17 +70,18 @@ func (h *AuthHandler) NurseRegister(c *gin.Context) {
 		}
 	}
 
-    createdNurse, err := h.authService.NurseRegister(nurseRequestDTO, files) // passa files para poder ser salvo no mongo
-    if err != nil {
-        utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
-        return
-    }
+	createdNurse, err := h.authService.NurseRegister(nurseRequestDTO, files) // passa files para poder ser salvo no mongo
+	if err != nil {
+		utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	utils.SendSuccessResponse(c, "usuário criado com sucesso", gin.H{"nurse": createdNurse})
 }
 
 func (h *AuthHandler) LoginUser(c *gin.Context) {
 	var userLoginRequestDTO dto.LoginRequestDTO
+	fmt.Println("userLoginRequestDTO", userLoginRequestDTO)
 	if err := c.ShouldBindJSON(&userLoginRequestDTO); err != nil {
 		utils.SendErrorResponse(c, "Requisição inválida", http.StatusBadRequest)
 		return
@@ -165,8 +167,8 @@ func (h *AuthHandler) SendEmailForgotPassword(c *gin.Context) {
 }
 
 func (h *AuthHandler) ChangePasswordUnlogged(c *gin.Context) {
-	userId := c.Param("id")
-	if userId == "" {
+	id := c.Param("id")
+	if id == "" {
 		utils.SendErrorResponse(c, "ID do usuário é obrigatório", http.StatusBadRequest)
 		return
 	}
@@ -177,11 +179,44 @@ func (h *AuthHandler) ChangePasswordUnlogged(c *gin.Context) {
 		return
 	}
 
-	err := h.authService.ChangePasswordUnlogged(updatedPasswordByNewPassword, userId)
+	err := h.authService.ChangePasswordUnlogged(updatedPasswordByNewPassword, id)
 	if err != nil {
 		utils.SendErrorResponse(c, err.Error(), http.StatusNotFound)
 		return
 	}
 
 	utils.SendSuccessResponse(c, "Senha atualizada com sucesso.", nil)
+}
+
+func (h *AuthHandler) ChangePasswordLogged(c *gin.Context) {
+	claims, exists := c.Get("claims")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token inválido"})
+		return
+	}
+	id, ok := claims.(jwt.MapClaims)["sub"].(string)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "userId inválido no token"})
+		return
+	}
+
+	var changePasswordBothRequestDTO dto.ChangePasswordBothRequestDTO
+	if err := c.ShouldBindJSON(&changePasswordBothRequestDTO); err != nil {
+		utils.SendErrorResponse(c, "Requisição inválida", http.StatusBadRequest)
+		return
+	}
+
+	err := h.authService.ChangePasswordLogged(changePasswordBothRequestDTO, id)
+	if err != nil {
+		utils.SendErrorResponse(c, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	utils.SendSuccessResponse(
+		c,
+		"Senha atualizada com sucesso.",
+		gin.H{
+			"token": "senha atualizada",
+		},
+	)
 }

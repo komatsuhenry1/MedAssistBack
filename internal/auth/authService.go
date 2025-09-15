@@ -22,7 +22,8 @@ type AuthService interface {
 	ValidateUserCode(inputCodeDto dto.InputCodeDto) (string, error)
 	FirstLoginAdmin() error
 	SendEmailForgotPassword(email dto.ForgotPasswordRequestDTO) error
-	ChangePasswordUnlogged(updatedPasswordByNewPassword dto.UpdatedPasswordByNewPassword, userId string) error
+	ChangePasswordUnlogged(updatedPasswordByNewPassword dto.UpdatedPasswordByNewPassword, id string) error
+	ChangePasswordLogged(changePasswordBothRequestDTO dto.ChangePasswordBothRequestDTO, id string) error
 }
 
 type authService struct {
@@ -346,12 +347,12 @@ func (s *authService) SendEmailForgotPassword(forgotPasswordRequestDTO dto.Forgo
 	return nil
 }
 
-func (s *authService) ChangePasswordUnlogged(updatedPasswordByNewPassword dto.UpdatedPasswordByNewPassword, userId string) error {
-	authUser, err := s.userRepository.FindAuthUserByID(userId)
+func (s *authService) ChangePasswordUnlogged(updatedPasswordByNewPassword dto.UpdatedPasswordByNewPassword, id string) error {
+	authUser, err := s.userRepository.FindAuthUserByID(id)
 
     if err != nil {
         if err.Error() == "usuário não encontrado" {
-            authUser, err = s.nurseRepository.FindAuthNurseByID(userId)
+            authUser, err = s.nurseRepository.FindAuthNurseByID(id)
             if err != nil {
                 return fmt.Errorf("usuário ou enfermeiro(a) com o ID fornecido não foi encontrado: %w", err)
             }
@@ -369,7 +370,38 @@ func (s *authService) ChangePasswordUnlogged(updatedPasswordByNewPassword dto.Up
 	}
 
 	if authUser.Role == "NURSE" {
-		return s.nurseRepository.UpdatePasswordByNurseID(userId, hashedNewPassword)
+		return s.nurseRepository.UpdatePasswordByNurseID(id, hashedNewPassword)
 	}
-	return s.userRepository.UpdatePasswordByUserID(userId, hashedNewPassword)
+	return s.userRepository.UpdatePasswordByUserID(id, hashedNewPassword)
+}
+
+func (s *authService) ChangePasswordLogged(changePasswordBothRequestDTO dto.ChangePasswordBothRequestDTO, id string) error {
+	authUser, err := s.userRepository.FindAuthUserByID(id)
+
+    if err != nil {
+        if err.Error() == "usuário não encontrado" {
+            authUser, err = s.nurseRepository.FindAuthNurseByID(id)
+            if err != nil {
+                return fmt.Errorf("usuário ou enfermeiro(a) com o ID fornecido não foi encontrado: %w", err)
+            }
+        } else {
+            return fmt.Errorf("erro ao buscar usuário: %w", err)
+        }
+    }
+	if !utils.ComparePassword(authUser.Password, changePasswordBothRequestDTO.Password) {
+		return fmt.Errorf("senha atual incorreta")
+	}
+	// a senha precisa ter caracteres especiais, numeros e letras
+	if !utils.ValidatePassword(changePasswordBothRequestDTO.NewPassword) {
+		return fmt.Errorf("senha invalida. A senha precisa ter caracteres especiais, numeros e letras")
+	}
+	hashedNewPassword, err := utils.HashPassword(changePasswordBothRequestDTO.NewPassword)
+	if err != nil {
+		return fmt.Errorf("Erro ao criptografar senha: %w", err)
+	}
+
+	if authUser.Role == "NURSE" {
+		return s.nurseRepository.UpdatePasswordByNurseID(id, hashedNewPassword)
+	}
+	return s.userRepository.UpdatePasswordByUserID(id, hashedNewPassword)
 }
