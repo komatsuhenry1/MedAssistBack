@@ -12,7 +12,7 @@ func SendEmailNurseRegister(email string) error {
 	m.SetHeader("From", os.Getenv("EMAIL_SENDER"))
 	m.SetHeader("To", email)
 
-	m.SetHeader("Subject", "🔑 Senha inicial - Bem-vindo à Plataforma")
+	m.SetHeader("Subject", "🔑 Análise de cadastro - Bem-vindo à Plataforma")
 
 	html := fmt.Sprintf(`
 	<!DOCTYPE html>
@@ -65,15 +65,14 @@ func SendEmailNurseRegister(email string) error {
 	</head>
 	<body>
 		<div class="container">
-			<h2>🔑 Sua conta está em analise para ser cadastrada no sistema como nurse</h2>
+			<h2>🔑 Sua conta está em analise para ser cadastrada no sistema como enfermeiro(a).</h2>
 			<p>Olá,</p>
-			<p>Seja bem-vindo! Sua conta foi criada com sucesso.</p>
 			<p><strong>E-mail cadastrado:</strong></p>
 			<div class="code-box">%s</div>
 
-			<p><strong>Sua conta está em analise para ser cadastrada no sistema como nurse:</strong></p>
+			<p><strong>Sua conta está em analise para ser cadastrada no sistema como enfermeiro(a).</strong></p>
 
-			<p>⚠️ Por motivos de segurança, recomendamos que você altere sua senha assim que fizer o primeiro login.</p>
+			<p>⚠️ Caso necessário, você pode alterar sua senha assim que fizer o primeiro login.</p>
 
 			<div class="footer">
 				<p>Se você não solicitou esta conta, apenas ignore este e-mail.</p>
@@ -105,7 +104,7 @@ func SendEmailUserRegister(email string) error {
 	m.SetHeader("From", os.Getenv("EMAIL_SENDER"))
 	m.SetHeader("To", email)
 
-	m.SetHeader("Subject", "🔑 Senha inicial - Bem-vindo à Plataforma")
+	m.SetHeader("Subject", "🔑 Cadastro de conta - Bem-vindo à Plataforma")
 
 	html := fmt.Sprintf(`
 	<!DOCTYPE html>

@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupNurseRoutes(r *gin.Engine, container *di.Container) {
+func SetupNurseRoutes(r *gin.RouterGroup, container *di.Container) {
 	nurse := r.Group("/nurse")
 	{
 		nurse.PATCH("/online", middleware.AuthNurse(), container.NurseHandler.ChangeOnlineNurse)

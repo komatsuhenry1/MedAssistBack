@@ -22,10 +22,12 @@ func InitializeRoutes() *gin.Engine {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	SetupAuthRoutes(router, container)
-	SetupUserRoutes(router, container)
-	SetupNurseRoutes(router, container)
-	SetupAdminRoutes(router, container)
+	api := router.Group("/api/v1")
+
+	SetupAuthRoutes(api, container)
+	SetupUserRoutes(api, container)
+	SetupNurseRoutes(api, container)
+	SetupAdminRoutes(api, container)
 
 	return router
 }

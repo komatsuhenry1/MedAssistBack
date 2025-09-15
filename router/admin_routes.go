@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupAdminRoutes(r *gin.Engine, container *di.Container) {
+func SetupAdminRoutes(r *gin.RouterGroup, container *di.Container) {
 	admin := r.Group("/admin")
 	{
 		admin.GET("dashboard", container.AdminHandler.Dashboard)

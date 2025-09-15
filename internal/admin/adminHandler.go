@@ -36,7 +36,7 @@ func (h *AdminHandler) GetDocuments(c *gin.Context) {
 	utils.SendSuccessResponse(c, "Documentos retornados com sucesso.", documents)	
 }
 
-func (h *AdminHandler) ApproveNurseRegister(c *gin.Context) {
+func (h *AdminHandler) ApproveNurseRegister(c *gin.Context){
 	approvedNurseId := c.Param("id")
 
 	msg, err := h.adminService.ApproveNurseRegister(approvedNurseId)
