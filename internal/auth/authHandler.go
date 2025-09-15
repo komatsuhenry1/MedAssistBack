@@ -61,7 +61,9 @@ func (h *AuthHandler) NurseRegister(c *gin.Context) {
 
 	requiredFiles := []string{"license_document", "qualifications", "general_register", "residence_comprovant"}
 	for _, fieldName := range requiredFiles {
+		fmt.Println(requiredFiles)
 		if _, ok := files[fieldName]; !ok || len(files[fieldName]) == 0 {
+			fmt.Println("ök")
 			utils.SendErrorResponse(c, "Arquivo obrigatório não enviado: "+fieldName, http.StatusBadRequest)
 			return
 		}
@@ -145,4 +147,19 @@ func (h *AuthHandler) FirstLoginAdmin(c *gin.Context) {
 	}
 
 	utils.SendSuccessResponse(c, "Usuário inicial criado com sucesso.", "ADMIN_CREATED")
+}
+
+func (h *AuthHandler) SendEmailForgotPassword(c *gin.Context) {
+	var email dto.ForgotPasswordRequestDTO
+	if err := c.ShouldBindJSON(&email); err != nil {
+		utils.SendErrorResponse(c, "Requisição inválida", http.StatusBadRequest)
+		return
+	}
+
+	err := h.authService.SendEmailForgotPassword(email)
+	if err != nil {
+		utils.SendErrorResponse(c, "Usuário não encontrado", http.StatusNotFound)
+		return
+	}
+	utils.SendSuccessResponse(c, "Email enviado com sucesso.", nil)
 }

@@ -109,3 +109,7 @@ type InputCodeDto struct {
 	Email string `json:"email"`
 	Code  int    `json:"code"`
 }
+
+type ForgotPasswordRequestDTO struct{
+	Email string `json:"email"`
+}

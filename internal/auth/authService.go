@@ -21,6 +21,7 @@ type AuthService interface {
 	SendCodeToEmail(emailAuthRequestDTO dto.EmailAuthRequestDTO) (dto.CodeResponseDTO, error)
 	ValidateUserCode(inputCodeDto dto.InputCodeDto) (string, error)
 	FirstLoginAdmin() error
+	SendEmailForgotPassword(email dto.ForgotPasswordRequestDTO) error
 }
 
 type authService struct {
@@ -215,10 +216,7 @@ func (s *authService) LoginUser(loginRequestDTO dto.LoginRequestDTO) (string, dt
 		return "", dto.AuthUser{}, fmt.Errorf("Credenciais incorretas.")
 	}
 
-	fmt.Println("authUser.Role: ", authUser.Role)
-	fmt.Println("authUser.ID: ", authUser.ID)
-
-	token, err := utils.GenerateToken(authUser.ID.Hex(), authUser.Role, authUser.Hidden)
+	token, err := utils.GenerateToken(authUser.ID.Hex(), authUser.Role, authUser.Hidden, float64(168))
 	if err != nil {
 		return "", dto.AuthUser{}, fmt.Errorf("erro ao gerar token: %w", err)
 	}
@@ -269,11 +267,13 @@ func (s *authService) ValidateUserCode(inputCodeDto dto.InputCodeDto) (string, e
 		return "", fmt.Errorf("erro ao buscar user by email")
 	}
 
+	hourExp := float64(168)
+
 	//valida o codigo inputado com o do banco
 	userCode := user.TempCode
 
 	if inputCodeDto.Code == userCode {
-		token, err := utils.GenerateToken(user.ID.Hex(), user.Role, user.Hidden)
+		token, err := utils.GenerateToken(user.ID.Hex(), user.Role, user.Hidden, hourExp)
 		if err != nil {
 			return "", fmt.Errorf("Erro ao gerar token.")
 		}
@@ -315,6 +315,34 @@ func (s *authService) FirstLoginAdmin() error {
 	}
 
 	utils.SendEmailForAdmin(adminEmail)
+
+	return nil
+}
+
+
+func (s *authService) SendEmailForgotPassword(forgotPasswordRequestDTO dto.ForgotPasswordRequestDTO) error {
+	authUser, err := s.userRepository.FindUserByEmail(forgotPasswordRequestDTO.Email)
+	if err != nil && err.Error() == "usuário não encontrado" {
+		authUser, err = s.nurseRepository.FindNurseByEmail(forgotPasswordRequestDTO.Email)
+
+		if err != nil {
+			return fmt.Errorf("Erro ao encontrar enfermeiro(a) para enviar email: %w", err)
+		}
+	} else if err != nil {
+		return fmt.Errorf("Erro ao encontrar usuario para enviar email: %w", err)
+	}
+
+	hourExp := 0.25
+
+	token, err := utils.GenerateToken(authUser.ID.Hex(), authUser.Role, authUser.Hidden, hourExp)
+	if err != nil {
+		return fmt.Errorf("erro ao gerar token: %w", err)
+	}
+
+
+	if err := utils.SendEmailForgotPassword(authUser.Email, authUser.ID.Hex(), token); err != nil {
+		return fmt.Errorf("erro ao enviar e-mail: %w", err)
+	}
 
 	return nil
 }

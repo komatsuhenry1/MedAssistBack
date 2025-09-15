@@ -39,7 +39,7 @@ func NewUserRepository(db *mongo.Database) UserRepository {
 
 func (r *userRepository) FindUserByEmail(email string) (dto.AuthUser, error) {
     var authUser dto.AuthUser
-    
+
     err := r.collection.FindOne(r.ctx, bson.M{"email": email}).Decode(&authUser)
     if err != nil {
         if errors.Is(err, mongo.ErrNoDocuments) {
