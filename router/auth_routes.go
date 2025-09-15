@@ -16,8 +16,8 @@ func SetupAuthRoutes(r *gin.RouterGroup, container *di.Container) {
 		auth.PATCH("/code", container.AuthHandler.SendCode)
 		auth.POST("/validate", container.AuthHandler.ValidateCode)
 		auth.POST("/adm", container.AuthHandler.FirstLoginAdmin)
-		auth.PATCH("/email", container.AuthHandler.SendEmailForgotPassword)
-		// auth.PATCH("/password", container.AuthHandler.UpdatePassword)
+		auth.POST("/email", container.AuthHandler.SendEmailForgotPassword)
+		auth.PATCH("/password/:id", container.AuthHandler.ChangePasswordUnlogged)
 		// auth.PATCH("/forgot-password/:id", container.AuthHandler.ChangePassword)
 	}
 }

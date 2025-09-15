@@ -163,3 +163,25 @@ func (h *AuthHandler) SendEmailForgotPassword(c *gin.Context) {
 	}
 	utils.SendSuccessResponse(c, "Email enviado com sucesso.", nil)
 }
+
+func (h *AuthHandler) ChangePasswordUnlogged(c *gin.Context) {
+	userId := c.Param("id")
+	if userId == "" {
+		utils.SendErrorResponse(c, "ID do usuário é obrigatório", http.StatusBadRequest)
+		return
+	}
+
+	var updatedPasswordByNewPassword dto.UpdatedPasswordByNewPassword
+	if err := c.ShouldBindJSON(&updatedPasswordByNewPassword); err != nil {
+		utils.SendErrorResponse(c, "Requisição inválida", http.StatusBadRequest)
+		return
+	}
+
+	err := h.authService.ChangePasswordUnlogged(updatedPasswordByNewPassword, userId)
+	if err != nil {
+		utils.SendErrorResponse(c, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	utils.SendSuccessResponse(c, "Senha atualizada com sucesso.", nil)
+}

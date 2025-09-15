@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"medassist/internal/model"
+	"io"
 	"medassist/internal/auth/dto"
+	"medassist/internal/model"
 	"medassist/utils"
 	"time"
-	"io"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -26,6 +26,8 @@ type NurseRepository interface {
 	UpdateNurseFields(userId string, updates map[string]interface{}) (model.Nurse, error)
 	SetLicenseDocumentID(nurseID, documentID primitive.ObjectID) error
 	UploadFile(file io.Reader, fileName string) (primitive.ObjectID, error)
+	FindAuthNurseByID(id string) (dto.AuthUser, error)
+	UpdatePasswordByNurseID(userID string, hashedPassword string) error
 }
 
 type nurseRepository struct {
@@ -48,20 +50,58 @@ func NewNurseRepository(db *mongo.Database) NurseRepository {
 }
 
 func (r *nurseRepository) FindNurseByEmail(email string) (dto.AuthUser, error) {
-    var authUser dto.AuthUser
+	var authUser dto.AuthUser
 
-    // A busca é feita na coleção "nurses"
-    err := r.collection.FindOne(r.ctx, bson.M{"email": email}).Decode(&authUser)
+	// A busca é feita na coleção "nurses"
+	err := r.collection.FindOne(r.ctx, bson.M{"email": email}).Decode(&authUser)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return authUser, fmt.Errorf("usuário não encontrado")
+		}
+		return authUser, err
+	}
+
+	return authUser, nil
+}
+
+func (r *nurseRepository) FindAuthNurseByID(id string) (dto.AuthUser, error) {
+	var authUser dto.AuthUser
+
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return authUser, fmt.Errorf("ID inválido")
+	}
+
+    err = r.collection.FindOne(r.ctx, bson.M{"_id": objectID}).Decode(&authUser)
     if err != nil {
         if errors.Is(err, mongo.ErrNoDocuments) {
-            return authUser, fmt.Errorf("usuário não encontrado")
+            return authUser, fmt.Errorf("enfermeiro não encontrado")
         }
         return authUser, err
     }
-
     return authUser, nil
 }
 
+func (r *nurseRepository) UpdatePasswordByNurseID(userID string, hashedPassword string) error {
+	objID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return fmt.Errorf("ID inválido")
+	}
+
+	result, err := r.collection.UpdateByID(r.ctx, objID, bson.M{
+		"$set": bson.M{
+			"password":   hashedPassword,
+			"updated_at": time.Now(),
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("nenhum usuário encontrado com o ID %s", userID)
+	}
+	return nil
+}
 
 func (r *nurseRepository) FindNurseByCpf(cpf string) (model.Nurse, error) {
 
@@ -76,7 +116,6 @@ func (r *nurseRepository) FindNurseByCpf(cpf string) (model.Nurse, error) {
 
 	return nurse, nil
 }
-
 
 func (r *nurseRepository) FindNurseById(id string) (model.Nurse, error) {
 	var nurse model.Nurse
@@ -98,27 +137,25 @@ func (r *nurseRepository) FindNurseById(id string) (model.Nurse, error) {
 	return nurse, nil
 }
 
-
 func (r *nurseRepository) CreateNurse(nurse *model.Nurse) error {
 	_, err := r.collection.InsertOne(r.ctx, nurse)
 	return err
 }
 
 func (r *nurseRepository) UploadFile(file io.Reader, fileName string) (primitive.ObjectID, error) {
-    uploadStream, err := r.bucket.OpenUploadStream(fileName)
-    if err != nil {
-        return primitive.NilObjectID, err
-    }
-    defer uploadStream.Close()
+	uploadStream, err := r.bucket.OpenUploadStream(fileName)
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+	defer uploadStream.Close()
 
-    if _, err := io.Copy(uploadStream, file); err != nil {
-        return primitive.NilObjectID, err
-    }
+	if _, err := io.Copy(uploadStream, file); err != nil {
+		return primitive.NilObjectID, err
+	}
 
-    fileID := uploadStream.FileID.(primitive.ObjectID)
-    return fileID, nil
+	fileID := uploadStream.FileID.(primitive.ObjectID)
+	return fileID, nil
 }
-
 
 func (r *nurseRepository) SetLicenseDocumentID(nurseID, documentID primitive.ObjectID) error {
 	filter := bson.M{"_id": nurseID}
@@ -126,7 +163,6 @@ func (r *nurseRepository) SetLicenseDocumentID(nurseID, documentID primitive.Obj
 	_, err := r.collection.UpdateOne(r.ctx, filter, update)
 	return err
 }
-
 
 func (r *nurseRepository) UpdateTempCode(userID string, code int) error {
 
@@ -156,7 +192,6 @@ func (r *nurseRepository) UpdateTempCode(userID string, code int) error {
 	return nil
 }
 
-
 func (r *nurseRepository) UpdateNurse(nurseId string, nurseUpdates bson.M) (model.Nurse, error) {
 	if titleRaw, ok := nurseUpdates["title"]; ok {
 		title, ok := titleRaw.(string)
@@ -172,7 +207,6 @@ func (r *nurseRepository) UpdateNurse(nurseId string, nurseUpdates bson.M) (mode
 	}
 	return nurse, nil
 }
-
 
 func (r *nurseRepository) UpdateNurseFields(id string, updates map[string]interface{}) (model.Nurse, error) {
 	cleanUpdates := bson.M{}

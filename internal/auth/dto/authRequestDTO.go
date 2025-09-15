@@ -113,3 +113,11 @@ type InputCodeDto struct {
 type ForgotPasswordRequestDTO struct{
 	Email string `json:"email"`
 }
+
+type ChangePasswordRequestDTO struct {
+	Password    string `json:"password" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required"`
+}
+type UpdatedPasswordByNewPassword struct {
+	NewPassword string `json:"new_password" binding:"required"`
+}

@@ -22,6 +22,7 @@ type AuthService interface {
 	ValidateUserCode(inputCodeDto dto.InputCodeDto) (string, error)
 	FirstLoginAdmin() error
 	SendEmailForgotPassword(email dto.ForgotPasswordRequestDTO) error
+	ChangePasswordUnlogged(updatedPasswordByNewPassword dto.UpdatedPasswordByNewPassword, userId string) error
 }
 
 type authService struct {
@@ -205,8 +206,8 @@ func (s *authService) LoginUser(loginRequestDTO dto.LoginRequestDTO) (string, dt
 		return "", dto.AuthUser{}, err
 	}
 
-	if authUser.Role == "NURSE" && !authUser.VerificationSeal{
-		return "", dto.AuthUser{}, fmt.Errorf("A conta ainda não foi verificada.")	
+	if authUser.Role == "NURSE" && !authUser.VerificationSeal {
+		return "", dto.AuthUser{}, fmt.Errorf("A conta ainda não foi verificada.")
 	}
 
 	if authUser.Hidden {
@@ -319,7 +320,6 @@ func (s *authService) FirstLoginAdmin() error {
 	return nil
 }
 
-
 func (s *authService) SendEmailForgotPassword(forgotPasswordRequestDTO dto.ForgotPasswordRequestDTO) error {
 	authUser, err := s.userRepository.FindUserByEmail(forgotPasswordRequestDTO.Email)
 	if err != nil && err.Error() == "usuário não encontrado" {
@@ -339,10 +339,37 @@ func (s *authService) SendEmailForgotPassword(forgotPasswordRequestDTO dto.Forgo
 		return fmt.Errorf("erro ao gerar token: %w", err)
 	}
 
-
 	if err := utils.SendEmailForgotPassword(authUser.Email, authUser.ID.Hex(), token); err != nil {
 		return fmt.Errorf("erro ao enviar e-mail: %w", err)
 	}
 
 	return nil
+}
+
+func (s *authService) ChangePasswordUnlogged(updatedPasswordByNewPassword dto.UpdatedPasswordByNewPassword, userId string) error {
+	authUser, err := s.userRepository.FindAuthUserByID(userId)
+
+    if err != nil {
+        if err.Error() == "usuário não encontrado" {
+            authUser, err = s.nurseRepository.FindAuthNurseByID(userId)
+            if err != nil {
+                return fmt.Errorf("usuário ou enfermeiro(a) com o ID fornecido não foi encontrado: %w", err)
+            }
+        } else {
+            return fmt.Errorf("erro ao buscar usuário: %w", err)
+        }
+    }
+	// a senha precisa ter caracteres especiais, numeros e letras
+	if !utils.ValidatePassword(updatedPasswordByNewPassword.NewPassword) {
+		return fmt.Errorf("senha invalida. A senha precisa ter caracteres especiais, numeros e letras")
+	}
+	hashedNewPassword, err := utils.HashPassword(updatedPasswordByNewPassword.NewPassword)
+	if err != nil {
+		return fmt.Errorf("Erro ao criptografar senha: %w", err)
+	}
+
+	if authUser.Role == "NURSE" {
+		return s.nurseRepository.UpdatePasswordByNurseID(userId, hashedNewPassword)
+	}
+	return s.userRepository.UpdatePasswordByUserID(userId, hashedNewPassword)
 }

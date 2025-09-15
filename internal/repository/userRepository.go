@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"medassist/internal/model"
 	"medassist/internal/auth/dto"
+	"medassist/internal/model"
 	"medassist/utils"
 	"time"
 
@@ -15,7 +15,7 @@ import (
 )
 
 type UserRepository interface {
-	FindUserByEmail(email string) (dto.AuthUser, error) 
+	FindUserByEmail(email string) (dto.AuthUser, error)
 	FindUserByCpf(cpf string) (model.User, error)
 	FindUserById(id string) (model.User, error)
 	CreateUser(user *model.User) error
@@ -23,32 +23,74 @@ type UserRepository interface {
 	UpdateUser(userId string, userUpdated bson.M) (model.User, error)
 	UpdateUserFields(userId string, updates map[string]interface{}) (model.User, error)
 	UserExistsByEmail(email string) (bool, error)
+	FindAuthUserByID(id string) (dto.AuthUser, error)
+	UpdatePasswordByUserID(userID string, hashedPassword string) error
 }
 
 type userRepository struct {
-	collection       *mongo.Collection
-	ctx              context.Context
+	collection *mongo.Collection
+	ctx        context.Context
 }
 
 func NewUserRepository(db *mongo.Database) UserRepository {
 	return &userRepository{
-		collection:       db.Collection("users"),
-		ctx:              context.Background(),
+		collection: db.Collection("users"),
+		ctx:        context.Background(),
 	}
 }
 
 func (r *userRepository) FindUserByEmail(email string) (dto.AuthUser, error) {
-    var authUser dto.AuthUser
+	var authUser dto.AuthUser
 
-    err := r.collection.FindOne(r.ctx, bson.M{"email": email}).Decode(&authUser)
+	err := r.collection.FindOne(r.ctx, bson.M{"email": email}).Decode(&authUser)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return authUser, fmt.Errorf("usuário não encontrado")
+		}
+		return authUser, err
+	}
+
+	return authUser, nil
+}
+
+func (r *userRepository) FindAuthUserByID(id string) (dto.AuthUser, error) {
+	var authUser dto.AuthUser
+
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return authUser, fmt.Errorf("ID inválido")
+	}
+
+    err = r.collection.FindOne(r.ctx, bson.M{"_id": objectID}).Decode(&authUser)
     if err != nil {
         if errors.Is(err, mongo.ErrNoDocuments) {
             return authUser, fmt.Errorf("usuário não encontrado")
         }
         return authUser, err
     }
-
     return authUser, nil
+
+}
+
+func (r *userRepository) UpdatePasswordByUserID(userID string, hashedPassword string) error {
+	objID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return fmt.Errorf("ID inválido")
+	}
+
+	result, err := r.collection.UpdateByID(r.ctx, objID, bson.M{
+		"$set": bson.M{
+			"password":   hashedPassword,
+			"updated_at": time.Now(),
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("nenhum usuário encontrado com o ID %s", userID)
+	}
+	return nil
 }
 
 func (r *userRepository) FindUserByCpf(cpf string) (model.User, error) {
