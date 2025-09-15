@@ -12,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/gridfs"
 )
 
 type UserRepository interface {
@@ -25,17 +26,24 @@ type UserRepository interface {
 	UserExistsByEmail(email string) (bool, error)
 	FindAuthUserByID(id string) (dto.AuthUser, error)
 	UpdatePasswordByUserID(userID string, hashedPassword string) error
+	DownloadFileByID(fileID primitive.ObjectID) (*gridfs.DownloadStream, error)
 }
 
 type userRepository struct {
 	collection *mongo.Collection
 	ctx        context.Context
+	bucket     *gridfs.Bucket
 }
 
 func NewUserRepository(db *mongo.Database) UserRepository {
+	bucket, err := gridfs.NewBucket(db)
+	if err != nil {
+		panic(err)
+	}
 	return &userRepository{
 		collection: db.Collection("users"),
 		ctx:        context.Background(),
+		bucket:     bucket,
 	}
 }
 
@@ -61,14 +69,14 @@ func (r *userRepository) FindAuthUserByID(id string) (dto.AuthUser, error) {
 		return authUser, fmt.Errorf("ID inválido")
 	}
 
-    err = r.collection.FindOne(r.ctx, bson.M{"_id": objectID}).Decode(&authUser)
-    if err != nil {
-        if errors.Is(err, mongo.ErrNoDocuments) {
-            return authUser, fmt.Errorf("usuário não encontrado")
-        }
-        return authUser, err
-    }
-    return authUser, nil
+	err = r.collection.FindOne(r.ctx, bson.M{"_id": objectID}).Decode(&authUser)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return authUser, fmt.Errorf("usuário não encontrado")
+		}
+		return authUser, err
+	}
+	return authUser, nil
 
 }
 
@@ -215,4 +223,15 @@ func (r *userRepository) UserExistsByEmail(email string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func (r *userRepository) DownloadFileByID(fileID primitive.ObjectID) (*gridfs.DownloadStream, error) {
+	// Usa o bucket do GridFS para abrir o stream de download.
+	downloadStream, err := r.bucket.OpenDownloadStream(fileID)
+	if err != nil {
+		// Este erro ocorrerá se o fileID não existir no GridFS.
+		return nil, err
+	}
+
+	return downloadStream, nil
 }

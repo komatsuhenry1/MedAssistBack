@@ -5,13 +5,15 @@ import (
 	"medassist/internal/admin/dto"
 	"medassist/internal/repository"
 	"time"
-
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
 type AdminService interface {
 	ApproveNurseRegister(approvedUserId string) (string, error)
 	GetNurseDocumentsToAnalisys(nurseID string) ([]dto.DocumentInfoResponse, error)
+	GetFileStream(fileID primitive.ObjectID) (*gridfs.DownloadStream, error)
 }
 
 type adminService struct {
@@ -98,3 +100,8 @@ func (s *adminService) GetNurseDocumentsToAnalisys(nurseID string) ([]dto.Docume
 
 	return documents, nil
 }
+
+func (s *adminService) GetFileStream(fileID primitive.ObjectID) (*gridfs.DownloadStream, error) {
+	return s.userRepository.DownloadFileByID(fileID)
+}
+
