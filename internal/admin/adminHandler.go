@@ -47,3 +47,8 @@ func (h *AdminHandler) ApproveNurseRegister(c *gin.Context) {
 
 	utils.SendSuccessResponse(c, msg, gin.H{"status_code": http.StatusOK})
 }
+
+// func (h *AdminHandler) DownloadFile(c *gin.Context){
+// 	fileId := c.Param("id")
+
+// }
