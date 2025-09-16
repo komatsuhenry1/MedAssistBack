@@ -20,7 +20,7 @@ func NewAdminHandler(adminService AdminService) *AdminHandler {
 	return &AdminHandler{adminService: adminService}
 }
 
-func (h *AdminHandler) Dashboard(c *gin.Context) {
+func (h *AdminHandler) AdminDashboard(c *gin.Context) {
 	utils.SendSuccessResponse(c, "dashboard", http.StatusOK)
 }
 

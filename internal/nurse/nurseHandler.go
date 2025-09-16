@@ -15,6 +15,10 @@ func NewNurseHandler(nurseService NurseService) *NurseHandler {
 	return &NurseHandler{nurseService: nurseService}
 }
 
+func (h *NurseHandler) NurseDashboard(c *gin.Context){
+	utils.SendSuccessResponse(c, "nurse dashboard", http.StatusOK)
+}
+
 func (h *NurseHandler) ChangeOnlineNurse(c *gin.Context){
 	nurseId := utils.GetUserId(c)
 
@@ -44,3 +48,10 @@ func (h *NurseHandler) ChangeOnlineNurse(c *gin.Context){
 	utils.SendSuccessResponse(c, "Serviço ativado com sucesso.", nurseStatus)
 }
 
+func (h *NurseHandler) GetAllVisits(c *gin.Context){
+	utils.SendSuccessResponse(c, "get all visits", http.StatusOK)
+}
+
+func (h *NurseHandler) ConfirmVisit(c *gin.Context){
+	utils.SendSuccessResponse(c, "confirm visit", http.StatusOK)
+}

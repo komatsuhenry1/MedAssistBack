@@ -10,7 +10,7 @@ import (
 func SetupAdminRoutes(r *gin.RouterGroup, container *di.Container) {
 	admin := r.Group("/admin")
 	{
-		admin.GET("dashboard", container.AdminHandler.Dashboard)
+		admin.GET("dashboard", container.AdminHandler.AdminDashboard)
 		admin.GET("/all_pending_registers", container.AdminHandler.GetRegistersToApprove)
 		admin.GET("/documents/:id", middleware.AuthAdmin(), container.AdminHandler.GetDocuments)
 		admin.GET("/download/:id", middleware.AuthAdmin(), container.AdminHandler.DownloadFile)

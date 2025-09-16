@@ -4,12 +4,14 @@ package router
 import (
 	"medassist/internal/di"
 	"github.com/gin-gonic/gin"
+	"medassist/middleware"
 )
 
 func SetupUserRoutes(r *gin.RouterGroup, container *di.Container) {
-	// user := r.Group("/user")
+	user := r.Group("/user")
 	{
-		// user.POST("/register", container.UserHandler.UserRegister)
-		// Ex.: user.POST("/visit", middleware.AuthUser(), container.UserHandler.CreateVisit)
+		user.GET("/dashboard", middleware.AuthUser(), container.UserHandler.UserDashboard) // retorna dados relevantes para o user
+		user.GET("/all_nurses", middleware.AuthUser(), container.UserHandler.GetAllNurses) // get all nurses para agendar visita TODO
+		user.POST("/visit", middleware.AuthUser(), container.UserHandler.CreateVisit) // agendamento de visita TODO
 	}
 }
