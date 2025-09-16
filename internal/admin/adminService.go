@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"go.mongodb.org/mongo-driver/bson"
+	"os"
 )
 
 type AdminService interface {
@@ -66,7 +67,7 @@ func (s *adminService) GetNurseDocumentsToAnalisys(nurseID string) ([]dto.Docume
 	var documents []dto.DocumentInfoResponse
 
 	// 2. Monta a URL base para os downloads. Em um ambiente real, isso viria de uma variável de ambiente.
-	baseURL := "/admin/documents" // Ajuste para o prefixo da sua API
+	baseURL := os.Getenv("DOWNLOAD_URL")
 
 	// 3. Verifica cada campo de documento e, se existir, adiciona à lista de resposta.
 	if !nurse.LicenseDocumentID.IsZero() {

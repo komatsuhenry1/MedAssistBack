@@ -142,7 +142,7 @@ func (r *nurseRepository) CreateNurse(nurse *model.Nurse) error {
 	return err
 }
 
-func (r *nurseRepository) UploadFile(file io.Reader, fileName string) (primitive.ObjectID, error) {
+func (r *nurseRepository) UploadFile(file io.Reader, fileName string) (primitive.ObjectID, error) { // retorna o object id que foi criado em fs.files
 	uploadStream, err := r.bucket.OpenUploadStream(fileName)
 	if err != nil {
 		return primitive.NilObjectID, err

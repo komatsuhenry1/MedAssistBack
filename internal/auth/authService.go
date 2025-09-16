@@ -159,7 +159,7 @@ func (s *authService) NurseRegister(nurseRequestDTO dto.NurseRegisterRequestDTO,
 		uniqueFileName := fmt.Sprintf("%s_%s_%s", nurse.ID.Hex(), fieldName, fileHeader.Filename) // <nurse_id><license_number><image_name>
 
 		// usa o método genérico do repositório
-		fileID, err := s.nurseRepository.UploadFile(file, uniqueFileName) // sobe pro mongodb esse arquivo e gera o registroem fs.files
+		fileID, err := s.nurseRepository.UploadFile(file, uniqueFileName) // sobe pro mongodb esse arquivo e gera o registroem fs.files // retorna o object id que foi criado em fs.files
 		if err != nil {
 			// se um upload falhar, a operação inteira é cancelada
 			return model.Nurse{}, fmt.Errorf("erro no upload do arquivo %s: %w", fileHeader.Filename, err)

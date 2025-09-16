@@ -64,7 +64,6 @@ func (h *AuthHandler) NurseRegister(c *gin.Context) {
 	for _, fieldName := range requiredFiles {
 		fmt.Println(requiredFiles)
 		if _, ok := files[fieldName]; !ok || len(files[fieldName]) == 0 {
-			fmt.Println("ök")
 			utils.SendErrorResponse(c, "Arquivo obrigatório não enviado: "+fieldName, http.StatusBadRequest)
 			return
 		}
