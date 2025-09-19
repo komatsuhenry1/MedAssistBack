@@ -118,10 +118,21 @@ func (s *adminService) GetDashboardData() (dto.DashboardAdminDataResponse, error
 		return response, err
 	}
 
+	allUsers, err := s.userRepository.FindAllUsers()
+	if err != nil {
+		return response, err
+	}
+
+	allNurses, err := s.nurseRepository.FindAllNurses()
+	if err != nil {
+		return response, err
+	}
+
 	adminDashboardData := dto.DashboardAdminDataResponse{
-		TotalNurses: 100,
-		TotalPatients: 100,
-		VisitsToday: 100,
+		TotalNurses: len(allNurses),
+		TotalPatients: len(allUsers),
+		NumberVisits: 100, // ADD
+		VisitsToday: 100, // ADD
 		PendentApprovations: len(nursesIDsPendents),
 		NursesIDsPendentApprovations: nursesIDsPendents,
 	}

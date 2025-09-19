@@ -19,6 +19,7 @@ type UserRepository interface {
 	FindUserByEmail(email string) (dto.AuthUser, error)
 	FindUserByCpf(cpf string) (model.User, error)
 	FindUserById(id string) (model.User, error)
+	FindAllUsers() ([]model.User, error)
 	CreateUser(user *model.User) error
 	UpdateTempCode(userID string, code int) error
 	UpdateUser(userId string, userUpdated bson.M) (model.User, error)
@@ -223,6 +224,22 @@ func (r *userRepository) UserExistsByEmail(email string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func (r *userRepository) FindAllUsers() ([]model.User, error) {
+	var users []model.User
+
+	cursor, err := r.collection.Find(r.ctx, bson.M{})
+	if err != nil {
+		return users, err
+	}
+	defer cursor.Close(r.ctx)
+
+	if err = cursor.All(r.ctx, &users); err != nil {
+		return users, err
+	}
+
+	return users, nil
 }
 
 func (r *userRepository) DownloadFileByID(fileID primitive.ObjectID) (*gridfs.DownloadStream, error) {

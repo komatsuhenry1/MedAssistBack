@@ -9,6 +9,7 @@ type DashboardAdminDataResponse struct {
 	TotalNurses int `json:"total_nurses"`
 	TotalPatients int `json:"total_patients"`
 	VisitsToday int `json:"visits_today"`
+	NumberVisits int `json:"number_visits"`
 	PendentApprovations int `json:"pendent_approvations"`
 	NursesIDsPendentApprovations []string `json:"nurses_ids_pendent_approvations"`
 }

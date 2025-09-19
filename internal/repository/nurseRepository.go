@@ -21,6 +21,7 @@ type NurseRepository interface {
 	FindNurseByCpf(cpf string) (model.Nurse, error)
 	FindNurseById(id string) (model.Nurse, error)
 	CreateNurse(nurse *model.Nurse) error
+	FindAllNurses() ([]model.Nurse, error)
 	UpdateTempCode(userID string, code int) error
 	UpdateNurse(nurseId string, userUpdated bson.M) (model.Nurse, error)
 	UpdateNurseFields(userId string, updates map[string]interface{}) (model.Nurse, error)
@@ -260,4 +261,20 @@ func (r *nurseRepository) GetIdsNursesPendents() ([]string, error){
 		return nil, err
 	}
 	return nursesIds, nil
+}
+
+func (r *nurseRepository) FindAllNurses() ([]model.Nurse, error) {
+	var nurses []model.Nurse
+
+	cursor, err := r.collection.Find(r.ctx, bson.M{})
+	if err != nil {
+		return nurses, err
+	}
+	defer cursor.Close(r.ctx)
+
+	if err = cursor.All(r.ctx, &nurses); err != nil {
+		return nurses, err
+	}
+
+	return nurses, nil
 }
