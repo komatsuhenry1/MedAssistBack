@@ -38,8 +38,14 @@ func (h *AuthHandler) NurseRegister(c *gin.Context) {
 
 	fmt.Println("entrou")
 
-	yearsExp, _ := strconv.Atoi(c.PostForm("years_experience"))
-
+	yearsExpStr := c.PostForm("years_experience")
+	yearsExp, err := strconv.Atoi(yearsExpStr)
+	if err != nil {
+		// Se a conversão falhar, retorne um erro claro para o frontend
+		utils.SendErrorResponse(c, "Formato inválido para 'anos de experiência'. Esperado um número.", http.StatusBadRequest)
+		return // Interrompe a execução
+	}
+	
 	var nurseRequestDTO dto.NurseRegisterRequestDTO
 	nurseRequestDTO.Name = c.PostForm("name")
 	nurseRequestDTO.Email = c.PostForm("email")
@@ -80,9 +86,6 @@ func (h *AuthHandler) NurseRegister(c *gin.Context) {
 		utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	fmt.Println(createdNurse)
-	
 
 	utils.SendSuccessResponse(c, "usuário criado com sucesso", gin.H{"nurse": createdNurse})
 }

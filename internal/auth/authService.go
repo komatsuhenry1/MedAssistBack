@@ -101,12 +101,12 @@ func (s *authService) NurseRegister(nurseRequestDTO dto.NurseRegisterRequestDTO,
 	// Verifica se usuário existe (sem erro se não achar)
 	_, err = s.nurseRepository.FindNurseByEmail(normalizedEmail)
 	if err == nil {
-		return model.Nurse{}, fmt.Errorf("O(A) enfermeiro(a) com o email '%s' ja existe", normalizedEmail)
+		return model.Nurse{}, fmt.Errorf("Por favor, tente outro email.")
 	}
 
 	_, err = s.nurseRepository.FindNurseByCpf(nurseRequestDTO.Cpf)
 	if err == nil {
-		return model.Nurse{}, fmt.Errorf("O(A) enfermeiro(a) com o CPF '%s' ja existe", nurseRequestDTO.Cpf)
+		return model.Nurse{}, fmt.Errorf("Por favor, tente outro CPF.")
 	}
 
 	hashedPassword, err := utils.HashPassword(nurseRequestDTO.Password)
@@ -215,6 +215,7 @@ func (s *authService) LoginUser(loginRequestDTO dto.LoginRequestDTO) (string, dt
 		return "", dto.AuthUser{}, fmt.Errorf("Usuário não permitido para login.")
 	}
 	if !utils.ComparePassword(authUser.Password, loginRequestDTO.Password) {
+		fmt.Println("primeiro erro:", err)
 		return "", dto.AuthUser{}, fmt.Errorf("Credenciais incorretas.")
 	}
 

@@ -1,9 +1,10 @@
 package admin
 
 import (
+	"fmt"
+	"medassist/internal/admin/dto"
 	"medassist/utils"
 	"net/http"
-	"medassist/internal/admin/dto"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
@@ -49,6 +50,7 @@ func (h *AdminHandler) GetDocuments(c *gin.Context) {
 }
 
 func (h *AdminHandler) ApproveNurseRegister(c *gin.Context) {
+	fmt.Println("entrourujkasdnaks")
 	approvedNurseId := c.Param("id")
 
 	data, err := h.adminService.ApproveNurseRegister(approvedNurseId)
