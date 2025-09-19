@@ -101,6 +101,11 @@ func (h *AdminHandler) RejectNurseRegister(c *gin.Context){
 	rejectedNurseId := c.Param("id")
 
 	var rejectDescription dto.RejectDescription
+	if err := c.ShouldBindJSON(&rejectDescription); err != nil {
+        utils.SendErrorResponse(c, "Corpo da requisição inválido: "+err.Error(), http.StatusBadRequest)
+        return
+    }
+
 
 	data, err := h.adminService.RejectNurseRegister(rejectedNurseId, rejectDescription)
 	if err != nil {

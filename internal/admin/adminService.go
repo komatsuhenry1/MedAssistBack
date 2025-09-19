@@ -135,6 +135,7 @@ func (s *adminService) RejectNurseRegister(rejectedNurseId string, rejectDescrip
 		return "", err
 	}
 
+
 	err = utils.SendEmailRejectedNurse(nurse.Email, rejectDescription.Description)
 	if err != nil{
 		return "", err

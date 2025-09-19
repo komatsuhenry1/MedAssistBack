@@ -477,7 +477,10 @@ func SendEmailForgotPassword(email, id, token string) error {
 	return nil
 }
 
-func SendEmailRejectedNurse(email, reason string) error {
+func SendEmailRejectedNurse(email, description string) error {
+	fmt.Println("==========")
+	fmt.Println(description)
+	fmt.Println("==========")
 	m := gomail.NewMessage()
 	m.SetHeader("From", os.Getenv("EMAIL_SENDER"))
 	m.SetHeader("To", email)
@@ -532,12 +535,13 @@ func SendEmailRejectedNurse(email, reason string) error {
 	</head>
 	<body>
 	<div class="container">
-		<h2>❌ Cadastro Rejeitado</h2>
+		<h2>Cadastro Rejeitado</h2>
 		<p>Olá,</p>
 		<p>Infelizmente, sua solicitação de cadastro no sistema foi rejeitada.</p>
 
 		<p>Motivo:</p>
 		<div class="code-box">%s</div>
+		<p>Por favor realize o cadastro novamente.</p>
 
 		<p>Se você acredita que isso foi um engano, entre em contato com o suporte para mais informações.</p>
 
@@ -547,7 +551,7 @@ func SendEmailRejectedNurse(email, reason string) error {
 	</div>
 	</body>
 	</html>
-	`, reason)
+	`, description)
 
 	m.SetBody("text/html", html)
 
