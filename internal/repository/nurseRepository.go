@@ -28,6 +28,7 @@ type NurseRepository interface {
 	UploadFile(file io.Reader, fileName string) (primitive.ObjectID, error)
 	FindAuthNurseByID(id string) (dto.AuthUser, error)
 	UpdatePasswordByNurseID(userID string, hashedPassword string) error
+	GetIdsNursesPendents() ([]string, error)
 }
 
 type nurseRepository struct {
@@ -236,4 +237,27 @@ func (r *nurseRepository) UpdateNurseFields(id string, updates map[string]interf
 	}
 
 	return r.FindNurseById(id)
+}
+
+func (r *nurseRepository) GetIdsNursesPendents() ([]string, error){
+	var nursesIds []string
+	filter := bson.M{"verification_seal": false}
+	cursor, err := r.collection.Find(r.ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(r.ctx)
+
+	for cursor.Next(r.ctx) {
+		var nurse model.Nurse
+		if err := cursor.Decode(&nurse); err != nil {
+			return nil, err
+		}
+		nursesIds = append(nursesIds, nurse.ID.Hex())
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+	return nursesIds, nil
 }

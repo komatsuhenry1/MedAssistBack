@@ -69,7 +69,7 @@ func (s *authService) UserRegister(registerRequestDTO dto.UserRegisterRequestDTO
 		Address:     registerRequestDTO.Address,
 		Email:       normalizedEmail,
 		Password:    hashedPassword,
-		Role:        "USER",
+		Role:        "PATIENT",
 		Hidden:      false,
 		FirstAccess: true,
 		TempCode:    0,
@@ -350,16 +350,16 @@ func (s *authService) SendEmailForgotPassword(forgotPasswordRequestDTO dto.Forgo
 func (s *authService) ChangePasswordUnlogged(updatedPasswordByNewPassword dto.UpdatedPasswordByNewPassword, id string) error {
 	authUser, err := s.userRepository.FindAuthUserByID(id)
 
-    if err != nil {
-        if err.Error() == "usuário não encontrado" {
-            authUser, err = s.nurseRepository.FindAuthNurseByID(id)
-            if err != nil {
-                return fmt.Errorf("usuário ou enfermeiro(a) com o ID fornecido não foi encontrado: %w", err)
-            }
-        } else {
-            return fmt.Errorf("erro ao buscar usuário: %w", err)
-        }
-    }
+	if err != nil {
+		if err.Error() == "usuário não encontrado" {
+			authUser, err = s.nurseRepository.FindAuthNurseByID(id)
+			if err != nil {
+				return fmt.Errorf("usuário ou enfermeiro(a) com o ID fornecido não foi encontrado: %w", err)
+			}
+		} else {
+			return fmt.Errorf("erro ao buscar usuário: %w", err)
+		}
+	}
 	// a senha precisa ter caracteres especiais, numeros e letras
 	if !utils.ValidatePassword(updatedPasswordByNewPassword.NewPassword) {
 		return fmt.Errorf("senha invalida. A senha precisa ter caracteres especiais, numeros e letras")
@@ -378,16 +378,16 @@ func (s *authService) ChangePasswordUnlogged(updatedPasswordByNewPassword dto.Up
 func (s *authService) ChangePasswordLogged(changePasswordBothRequestDTO dto.ChangePasswordBothRequestDTO, id string) error {
 	authUser, err := s.userRepository.FindAuthUserByID(id)
 
-    if err != nil {
-        if err.Error() == "usuário não encontrado" {
-            authUser, err = s.nurseRepository.FindAuthNurseByID(id)
-            if err != nil {
-                return fmt.Errorf("usuário ou enfermeiro(a) com o ID fornecido não foi encontrado: %w", err)
-            }
-        } else {
-            return fmt.Errorf("erro ao buscar usuário: %w", err)
-        }
-    }
+	if err != nil {
+		if err.Error() == "usuário não encontrado" {
+			authUser, err = s.nurseRepository.FindAuthNurseByID(id)
+			if err != nil {
+				return fmt.Errorf("usuário ou enfermeiro(a) com o ID fornecido não foi encontrado: %w", err)
+			}
+		} else {
+			return fmt.Errorf("erro ao buscar usuário: %w", err)
+		}
+	}
 	if !utils.ComparePassword(authUser.Password, changePasswordBothRequestDTO.Password) {
 		return fmt.Errorf("senha atual incorreta")
 	}

@@ -3,6 +3,7 @@ package admin
 import (
 	"medassist/utils"
 	"net/http"
+	"medassist/internal/admin/dto"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
@@ -21,7 +22,13 @@ func NewAdminHandler(adminService AdminService) *AdminHandler {
 }
 
 func (h *AdminHandler) AdminDashboard(c *gin.Context) {
-	utils.SendSuccessResponse(c, "dashboard", http.StatusOK)
+
+	dashboardData, err := h.adminService.GetDashboardData()
+	if err != nil {
+		utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
+	}
+
+	utils.SendSuccessResponse(c, "Dados de dashboard carregados com sucesso", dashboardData)
 }
 
 func (h *AdminHandler) GetRegistersToApprove(c *gin.Context) {
@@ -44,13 +51,13 @@ func (h *AdminHandler) GetDocuments(c *gin.Context) {
 func (h *AdminHandler) ApproveNurseRegister(c *gin.Context) {
 	approvedNurseId := c.Param("id")
 
-	msg, err := h.adminService.ApproveNurseRegister(approvedNurseId)
+	data, err := h.adminService.ApproveNurseRegister(approvedNurseId)
 	if err != nil {
 		utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	utils.SendSuccessResponse(c, msg, gin.H{"status_code": http.StatusOK})
+	utils.SendSuccessResponse(c, "Enfermeiro(a) aprovado(a) com sucesso.", data)
 }
 
 func (h *AdminHandler) DownloadFile(c *gin.Context) {
@@ -66,7 +73,7 @@ func (h *AdminHandler) DownloadFile(c *gin.Context) {
 	downloadStream, err := h.adminService.GetFileStream(fileID)
 	if err != nil {
 		// O serviço retornará um erro se o arquivo não for encontrado.
-		utils.SendErrorResponse(c, "Arquivo não encontrado: "+err.Error(), http.StatusNotFound)
+		utils.SendErrorResponse(c, "Arquivo não encontrado", http.StatusNotFound)
 		return
 	}
 	// Garante que o stream será fechado no final da função.
@@ -89,3 +96,17 @@ func (h *AdminHandler) DownloadFile(c *gin.Context) {
 		return
 	}
 }
+
+func (h *AdminHandler) RejectNurseRegister(c *gin.Context){
+	rejectedNurseId := c.Param("id")
+
+	var rejectDescription dto.RejectDescription
+
+	data, err := h.adminService.RejectNurseRegister(rejectedNurseId, rejectDescription)
+	if err != nil {
+		utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	utils.SendSuccessResponse(c, "Enfermeiro(a) rejeitado com sucesso.", data)
+} 

@@ -4,17 +4,21 @@ import (
 	"fmt"
 	"medassist/internal/admin/dto"
 	"medassist/internal/repository"
+	"medassist/utils"
+	"os"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
-	"go.mongodb.org/mongo-driver/bson"
-	"os"
 )
 
 type AdminService interface {
 	ApproveNurseRegister(approvedUserId string) (string, error)
 	GetNurseDocumentsToAnalisys(nurseID string) ([]dto.DocumentInfoResponse, error)
 	GetFileStream(fileID primitive.ObjectID) (*gridfs.DownloadStream, error)
+	GetDashboardData() (dto.DashboardAdminDataResponse, error)
+	RejectNurseRegister(rejectedNurseId string, rejectDescription dto.RejectDescription) (string, error)
 }
 
 type adminService struct {
@@ -106,3 +110,37 @@ func (s *adminService) GetFileStream(fileID primitive.ObjectID) (*gridfs.Downloa
 	return s.userRepository.DownloadFileByID(fileID)
 }
 
+func (s *adminService) GetDashboardData() (dto.DashboardAdminDataResponse, error) {
+	var response dto.DashboardAdminDataResponse
+
+	nursesIDsPendents, err := s.nurseRepository.GetIdsNursesPendents()
+	if err != nil {
+		return response, err
+	}
+
+	adminDashboardData := dto.DashboardAdminDataResponse{
+		TotalNurses: 100,
+		TotalPatients: 100,
+		VisitsToday: 100,
+		PendentApprovations: len(nursesIDsPendents),
+		NursesIDsPendentApprovations: nursesIDsPendents,
+	}
+
+	return adminDashboardData, nil
+}
+
+func (s *adminService) RejectNurseRegister(rejectedNurseId string, rejectDescription dto.RejectDescription) (string, error){
+	nurse, err := s.nurseRepository.FindNurseById(rejectedNurseId)
+	if err != nil {
+		return "", err
+	}
+
+	err = utils.SendEmailRejectedNurse(nurse.Email, rejectDescription.Description)
+	if err != nil{
+		return "", err
+	}
+
+	//possivel funcao que salva esse acontecimento no historico
+
+	return "Enfermeiro(a) rejeitado com sucesso.", nil
+}

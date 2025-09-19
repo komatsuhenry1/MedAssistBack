@@ -36,6 +36,8 @@ func (h *AuthHandler) UserRegister(c *gin.Context) {
 
 func (h *AuthHandler) NurseRegister(c *gin.Context) {
 
+	fmt.Println("entrou")
+
 	yearsExp, _ := strconv.Atoi(c.PostForm("years_experience"))
 
 	var nurseRequestDTO dto.NurseRegisterRequestDTO
@@ -52,28 +54,35 @@ func (h *AuthHandler) NurseRegister(c *gin.Context) {
 	nurseRequestDTO.Department = c.PostForm("department")
 	nurseRequestDTO.YearsExperience = yearsExp
 
+	fmt.Println(nurseRequestDTO)
+	
+	
 	form, err := c.MultipartForm()
 	if err != nil {
 		utils.SendErrorResponse(c, "Erro ao processar formulário: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+	fmt.Println(form)
 
 	files := form.File // todos arquivos enviados
 
-	requiredFiles := []string{"license_document", "qualifications", "general_register", "residence_comprovant"}
-	for _, fieldName := range requiredFiles {
-		fmt.Println(requiredFiles)
-		if _, ok := files[fieldName]; !ok || len(files[fieldName]) == 0 {
-			utils.SendErrorResponse(c, "Arquivo obrigatório não enviado: "+fieldName, http.StatusBadRequest)
-			return
-		}
-	}
+	// requiredFiles := []string{"license_document", "qualifications", "general_register", "residence_comprovant"}
+	// for _, fieldName := range requiredFiles {
+	// 	fmt.Println(requiredFiles)
+	// 	if _, ok := files[fieldName]; !ok || len(files[fieldName]) == 0 {
+	// 		utils.SendErrorResponse(c, "Arquivo obrigatório não enviado: "+fieldName, http.StatusBadRequest)
+	// 		return
+	// 	}
+	// }
 
 	createdNurse, err := h.authService.NurseRegister(nurseRequestDTO, files) // passa files para poder ser salvo no mongo
 	if err != nil {
 		utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	fmt.Println(createdNurse)
+	
 
 	utils.SendSuccessResponse(c, "usuário criado com sucesso", gin.H{"nurse": createdNurse})
 }
