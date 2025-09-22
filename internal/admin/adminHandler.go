@@ -1,7 +1,6 @@
 package admin
 
 import (
-	"fmt"
 	"medassist/internal/admin/dto"
 	"medassist/utils"
 	"net/http"
@@ -50,7 +49,6 @@ func (h *AdminHandler) GetDocuments(c *gin.Context) {
 }
 
 func (h *AdminHandler) ApproveNurseRegister(c *gin.Context) {
-	fmt.Println("entrourujkasdnaks")
 	approvedNurseId := c.Param("id")
 
 	data, err := h.adminService.ApproveNurseRegister(approvedNurseId)

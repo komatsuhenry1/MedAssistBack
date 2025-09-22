@@ -55,6 +55,11 @@ func (s *adminService) ApproveNurseRegister(approvedNurseId string) (string, err
 		return "", fmt.Errorf("Erro ao atualizar user.")
 	}
 
+	err = utils.SendEmailApprovedNurse(nurse.Email)
+	if err != nil {
+		return "", err
+	}
+
 	return "Enfermeiro(a) aprovado(a) com sucesso.", nil
 }
 
@@ -147,7 +152,7 @@ func (s *adminService) RejectNurseRegister(rejectedNurseId string, rejectDescrip
 	}
 
 
-	err = utils.SendEmailRejectedNurse(nurse.Email, rejectDescription.Description)
+	err = utils.SendEmailRegistrationRejected(nurse.Email, rejectDescription.Description)
 	if err != nil{
 		return "", err
 	}

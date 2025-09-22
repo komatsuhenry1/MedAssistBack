@@ -477,10 +477,7 @@ func SendEmailForgotPassword(email, id, token string) error {
 	return nil
 }
 
-func SendEmailRejectedNurse(email, description string) error {
-	fmt.Println("==========")
-	fmt.Println(description)
-	fmt.Println("==========")
+func SendEmailRegistrationRejected(email, description string) error {
 	m := gomail.NewMessage()
 	m.SetHeader("From", os.Getenv("EMAIL_SENDER"))
 	m.SetHeader("To", email)
@@ -535,13 +532,12 @@ func SendEmailRejectedNurse(email, description string) error {
 	</head>
 	<body>
 	<div class="container">
-		<h2>Cadastro Rejeitado</h2>
+		<h2>❌ Cadastro Rejeitado</h2>
 		<p>Olá,</p>
 		<p>Infelizmente, sua solicitação de cadastro no sistema foi rejeitada.</p>
 
 		<p>Motivo:</p>
 		<div class="code-box">%s</div>
-		<p>Por favor realize o cadastro novamente.</p>
 
 		<p>Se você acredita que isso foi um engano, entre em contato com o suporte para mais informações.</p>
 
@@ -568,4 +564,90 @@ func SendEmailRejectedNurse(email, description string) error {
 
 	return nil
 }
+
+func SendEmailApprovedNurse(email string) error {
+	m := gomail.NewMessage()
+	m.SetHeader("From", os.Getenv("EMAIL_SENDER"))
+	m.SetHeader("To", email)
+	m.SetHeader("Subject", "✅ Cadastro Aprovado - MEDASSIST")
+
+	html := fmt.Sprintf(`
+	<!DOCTYPE html>
+	<html lang="pt-BR">
+	<head>
+	<meta charset="UTF-8">
+	<title>Cadastro Aprovado - MEDASSIST</title>
+	<style>
+	body {
+		background-color: #f9f9f9;
+		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+		color: #333333;
+		padding: 0;
+		margin: 0;
+	}
+	.container {
+		max-width: 600px;
+		margin: 40px auto;
+		background-color: #ffffff;
+		border-radius: 10px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+		padding: 30px 40px;
+	}
+	h2 {
+		color:rgb(53, 229, 82);
+		text-align: center;
+	}
+	p {
+		line-height: 1.6;
+		font-size: 15px;
+	}
+	.code-box {
+		background-color: #f1f1f1;
+		border-radius: 6px;
+		padding: 10px;
+		font-family: monospace;
+		font-size: 14px;
+		color: #333333;
+		margin: 10px 0;
+	}
+	.footer {
+		margin-top: 30px;
+		font-size: 12px;
+		color: #999999;
+		text-align: center;
+	}
+	</style>
+	</head>
+	<body>
+	<div class="container">
+		<h2>Cadastro Aprovado</h2>
+		<p>Olá,</p>
+		<p>Sua solicitação de cadastro no sistema, foi analisada e aprovada.</p>
+
+		<p>Se você acredita que isso foi um engano, entre em contato com o suporte para mais informações.</p>
+
+		<div class="footer">
+			<p>MEDASSIST - Este é um e-mail automático, por favor não responda.</p>
+		</div>
+	</div>
+	</body>
+	</html>
+	`)
+
+	m.SetBody("text/html", html)
+
+	d := gomail.NewDialer(
+		"smtp.gmail.com",
+		587,
+		os.Getenv("EMAIL_SENDER"),
+		os.Getenv("EMAIL_PASSWORD"),
+	)
+
+	if err := d.DialAndSend(m); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 

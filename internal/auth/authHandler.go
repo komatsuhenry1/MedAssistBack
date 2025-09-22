@@ -6,7 +6,6 @@ import (
 	"medassist/utils"
 	"net/http"
 	"strconv"
-
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -35,16 +34,18 @@ func (h *AuthHandler) UserRegister(c *gin.Context) {
 }
 
 func (h *AuthHandler) NurseRegister(c *gin.Context) {
-
-	fmt.Println("entrou")
-
+	
 	yearsExpStr := c.PostForm("years_experience")
+	fmt.Println("yearsExpStr: ", yearsExpStr)
+	fmt.Printf("yearsExpStr type: %T\n", yearsExpStr)
 	yearsExp, err := strconv.Atoi(yearsExpStr)
 	if err != nil {
 		// Se a conversão falhar, retorne um erro claro para o frontend
 		utils.SendErrorResponse(c, "Formato inválido para 'anos de experiência'. Esperado um número.", http.StatusBadRequest)
 		return // Interrompe a execução
 	}
+	fmt.Println(yearsExp)
+	fmt.Printf("yearsExp type: %T\n", yearsExp)
 	
 	var nurseRequestDTO dto.NurseRegisterRequestDTO
 	nurseRequestDTO.Name = c.PostForm("name")
@@ -60,7 +61,7 @@ func (h *AuthHandler) NurseRegister(c *gin.Context) {
 	nurseRequestDTO.Department = c.PostForm("department")
 	nurseRequestDTO.YearsExperience = yearsExp
 
-	fmt.Println(nurseRequestDTO)
+	fmt.Println("nurseRequestDTO.YearsExperience", nurseRequestDTO.YearsExperience)
 	
 	
 	form, err := c.MultipartForm()
