@@ -118,10 +118,10 @@ func (s *adminService) GetFileStream(fileID primitive.ObjectID) (*gridfs.Downloa
 func (s *adminService) GetDashboardData() (dto.DashboardAdminDataResponse, error) {
 	var response dto.DashboardAdminDataResponse
 
-	nursesIDsPendents, err := s.nurseRepository.GetIdsNursesPendents()
-	if err != nil {
-		return response, err
-	}
+	// nursesIDsPendents, err := s.nurseRepository.GetIdsNursesPendents()
+	// if err != nil {
+	// 	return response, err
+	// }
 
 	allUsers, err := s.userRepository.FindAllUsers()
 	if err != nil {
@@ -133,27 +133,39 @@ func (s *adminService) GetDashboardData() (dto.DashboardAdminDataResponse, error
 		return response, err
 	}
 
+	allNursesNotVerified, err := s.nurseRepository.FindAllNursesNotVerified()
+	if err != nil {
+		return response, err
+	}
+
+	var nursesFields []dto.NursesFieldsForDashboardResponse
+	for _, nurse := range allNursesNotVerified {
+		nursesFields = append(nursesFields, dto.NursesFieldsForDashboardResponse{
+			ID:   nurse.ID.Hex(),
+			Name: nurse.Name,
+		})
+	}
+
 	adminDashboardData := dto.DashboardAdminDataResponse{
-		TotalNurses: len(allNurses),
-		TotalPatients: len(allUsers),
-		NumberVisits: 100, // ADD
-		VisitsToday: 100, // ADD
-		PendentApprovations: len(nursesIDsPendents),
-		NursesIDsPendentApprovations: nursesIDsPendents,
+		TotalNurses:         len(allNurses),
+		TotalPatients:       len(allUsers),
+		NumberVisits:        100, // ADD
+		VisitsToday:         100, // ADD
+		PendentApprovations: len(allNursesNotVerified),
+		NursesFields:        nursesFields,
 	}
 
 	return adminDashboardData, nil
 }
 
-func (s *adminService) RejectNurseRegister(rejectedNurseId string, rejectDescription dto.RejectDescription) (string, error){
+func (s *adminService) RejectNurseRegister(rejectedNurseId string, rejectDescription dto.RejectDescription) (string, error) {
 	nurse, err := s.nurseRepository.FindNurseById(rejectedNurseId)
 	if err != nil {
 		return "", err
 	}
 
-
 	err = utils.SendEmailRegistrationRejected(nurse.Email, rejectDescription.Description)
-	if err != nil{
+	if err != nil {
 		return "", err
 	}
 

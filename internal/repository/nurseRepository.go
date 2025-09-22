@@ -22,6 +22,7 @@ type NurseRepository interface {
 	FindNurseById(id string) (model.Nurse, error)
 	CreateNurse(nurse *model.Nurse) error
 	FindAllNurses() ([]model.Nurse, error)
+	FindAllNursesNotVerified() ([]model.Nurse, error)
 	UpdateTempCode(userID string, code int) error
 	UpdateNurse(nurseId string, userUpdated bson.M) (model.Nurse, error)
 	UpdateNurseFields(userId string, updates map[string]interface{}) (model.Nurse, error)
@@ -267,6 +268,26 @@ func (r *nurseRepository) FindAllNurses() ([]model.Nurse, error) {
 	var nurses []model.Nurse
 
 	cursor, err := r.collection.Find(r.ctx, bson.M{})
+	if err != nil {
+		return nurses, err
+	}
+	defer cursor.Close(r.ctx)
+
+	if err = cursor.All(r.ctx, &nurses); err != nil {
+		return nurses, err
+	}
+
+	return nurses, nil
+}
+
+func (r *nurseRepository) FindAllNursesNotVerified() ([]model.Nurse, error) {
+	var nurses []model.Nurse
+
+	filter := bson.M{
+		"verification_seal": false,
+	}
+
+	cursor, err := r.collection.Find(r.ctx, filter)
 	if err != nil {
 		return nurses, err
 	}
