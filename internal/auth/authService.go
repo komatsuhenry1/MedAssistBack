@@ -201,6 +201,7 @@ func (s *authService) LoginUser(loginRequestDTO dto.LoginRequestDTO) (string, dt
 		authUser, err = s.nurseRepository.FindNurseByEmail(loginRequestDTO.Email)
 
 		if err != nil {
+			fmt.Println("primeiro erro:", err)
 			return "", dto.AuthUser{}, fmt.Errorf("Credenciais incorretas.")
 		}
 	} else if err != nil {

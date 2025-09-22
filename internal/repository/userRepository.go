@@ -229,7 +229,7 @@ func (r *userRepository) UserExistsByEmail(email string) (bool, error) {
 func (r *userRepository) FindAllUsers() ([]model.User, error) {
 	var users []model.User
 
-	cursor, err := r.collection.Find(r.ctx, bson.M{})
+	cursor, err := r.collection.Find(r.ctx, bson.M{"role": "PATIENT"})
 	if err != nil {
 		return users, err
 	}
