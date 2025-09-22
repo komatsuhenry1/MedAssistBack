@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"medassist/internal/auth/dto"
+	userDTO "medassist/internal/user/dto"
 	"medassist/internal/model"
 	"medassist/utils"
 	"time"
@@ -31,6 +32,7 @@ type NurseRepository interface {
 	FindAuthNurseByID(id string) (dto.AuthUser, error)
 	UpdatePasswordByNurseID(userID string, hashedPassword string) error
 	GetIdsNursesPendents() ([]string, error)
+	GetAllNurses() ([]userDTO.AllNursesListDto, error)
 }
 
 type nurseRepository struct {
@@ -298,4 +300,59 @@ func (r *nurseRepository) FindAllNursesNotVerified() ([]model.Nurse, error) {
 	}
 
 	return nurses, nil
+}
+
+func (r *nurseRepository) GetAllNurses() ([]userDTO.AllNursesListDto, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	filter := bson.M{"hidden": false, "verification_seal": true}
+
+	cursor, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		fmt.Printf("Erro ao buscar enfermeiros no MongoDB: %v", err)
+		return nil, err
+	}
+	// Garante que o cursor será fechado no final da função
+	defer cursor.Close(ctx)
+
+	// Onde vamos armazenar o resultado final
+	var nursesDto []userDTO.AllNursesListDto
+
+	// Itera sobre cada documento retornado pelo MongoDB
+	for cursor.Next(ctx) {
+		var nurseModel model.Nurse
+		// Decodifica o documento BSON para o nosso struct Nurse
+		if err := cursor.Decode(&nurseModel); err != nil {
+			fmt.Printf("Erro ao decodificar enfermeiro: %v", err)
+			continue // Pula para o próximo em caso de erro de decodificação
+		}
+
+		// Mapeia os campos do Model para o DTO
+		nurseDto := userDTO.AllNursesListDto{
+			ID:              nurseModel.ID.Hex(), // Convertendo o ObjectID para string
+			Name:            nurseModel.Name,
+			Specialization:  nurseModel.Specialization,
+			YearsExperience: nurseModel.YearsExperience,
+			// Os campos 'Price' e 'Image' não existem no seu Model.
+			// Você precisará decidir de onde virão esses dados.
+			// Por enquanto, serão retornados com valores padrão (0 e string vazia).
+			Price:           0,
+			Image:           "",
+			Shift:           nurseModel.Shift,
+			Department:      nurseModel.Department,
+			Available:       nurseModel.Online, // Mapeando o campo 'Online' para 'Available'
+			Location:        nurseModel.Address, // Mapeando o campo 'Address' para 'Location'
+		}
+
+		nursesDto = append(nursesDto, nurseDto)
+	}
+
+	// Verifica se houve algum erro durante a iteração do cursor
+	if err := cursor.Err(); err != nil {
+		fmt.Printf("Erro no cursor do MongoDB: %v", err)
+		return nil, err
+	}
+
+	return nursesDto, nil
 }

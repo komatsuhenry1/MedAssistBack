@@ -39,7 +39,7 @@ func AuthUser() gin.HandlerFunc {
 		}
 
 		role, ok := claims["role"].(string)
-		if !ok || role != "USER" && role != "ADMIN" {
+		if !ok || role != "PATIENT" && role != "ADMIN" {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "restricted access to Users"})
 			return
 		}

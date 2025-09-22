@@ -20,7 +20,13 @@ func (h *UserHandler) UserDashboard(c *gin.Context){
 }
 
 func (h *UserHandler) GetAllNurses(c *gin.Context){
-	utils.SendSuccessResponse(c, "user dashboard", http.StatusOK)
+	nurses, err := h.userService.GetAllNurses()
+	if err != nil {
+		utils.SendErrorResponse(c, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	utils.SendSuccessResponse(c, "Enfermeiros listados com sucesso.", nurses)
 }
 
 func (h *UserHandler) CreateVisit(c *gin.Context){
