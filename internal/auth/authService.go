@@ -175,6 +175,8 @@ func (s *authService) NurseRegister(nurseRequestDTO dto.NurseRegisterRequestDTO,
 			nurse.GeneralRegisterID = fileID
 		case "residence_comprovant":
 			nurse.ResidenceComprovantId = fileID
+		case "face_image":
+			nurse.FaceImageID = fileID
 		}
 	}
 

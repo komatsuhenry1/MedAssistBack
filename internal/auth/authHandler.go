@@ -59,10 +59,7 @@ func (h *AuthHandler) NurseRegister(c *gin.Context) {
 	nurseRequestDTO.Specialization = c.PostForm("specialization")
 	nurseRequestDTO.Shift = c.PostForm("shift")
 	nurseRequestDTO.Department = c.PostForm("department")
-	nurseRequestDTO.YearsExperience = yearsExp
-
-	fmt.Println("nurseRequestDTO.YearsExperience", nurseRequestDTO.YearsExperience)
-	
+	nurseRequestDTO.YearsExperience = yearsExp	
 	
 	form, err := c.MultipartForm()
 	if err != nil {
@@ -73,14 +70,14 @@ func (h *AuthHandler) NurseRegister(c *gin.Context) {
 
 	files := form.File // todos arquivos enviados
 
-	// requiredFiles := []string{"license_document", "qualifications", "general_register", "residence_comprovant"}
-	// for _, fieldName := range requiredFiles {
-	// 	fmt.Println(requiredFiles)
-	// 	if _, ok := files[fieldName]; !ok || len(files[fieldName]) == 0 {
-	// 		utils.SendErrorResponse(c, "Arquivo obrigatório não enviado: "+fieldName, http.StatusBadRequest)
-	// 		return
-	// 	}
-	// }
+	requiredFiles := []string{"license_document", "qualifications", "general_register", "residence_comprovant", "face_image"}
+	for _, fieldName := range requiredFiles {
+		fmt.Println(requiredFiles)
+		if _, ok := files[fieldName]; !ok || len(files[fieldName]) == 0 {
+			utils.SendErrorResponse(c, "Arquivo obrigatório não enviado: "+fieldName, http.StatusBadRequest)
+			return
+		}
+	}
 
 	createdNurse, err := h.authService.NurseRegister(nurseRequestDTO, files) // passa files para poder ser salvo no mongo
 	if err != nil {
