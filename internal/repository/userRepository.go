@@ -1,9 +1,11 @@
 package repository
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"medassist/internal/auth/dto"
 	"medassist/internal/model"
 	"medassist/utils"
@@ -28,6 +30,7 @@ type UserRepository interface {
 	FindAuthUserByID(id string) (dto.AuthUser, error)
 	UpdatePasswordByUserID(userID string, hashedPassword string) error
 	DownloadFileByID(fileID primitive.ObjectID) (*gridfs.DownloadStream, error)
+	FindFileByID(ctx context.Context, id primitive.ObjectID) (*dto.FileData, error)
 }
 
 type userRepository struct {
@@ -251,4 +254,37 @@ func (r *userRepository) DownloadFileByID(fileID primitive.ObjectID) (*gridfs.Do
 	}
 
 	return downloadStream, nil
+}
+
+func (r *userRepository) FindFileByID(ctx context.Context, id primitive.ObjectID) (*dto.FileData, error) {
+	downloadStream, err := r.bucket.OpenDownloadStream(id)
+	if err != nil {
+		return nil, fmt.Errorf("arquivo com ID %s não encontrado no GridFS: %w", id.Hex(), err)
+	}
+	defer downloadStream.Close()
+
+	buf := new(bytes.Buffer)
+	if _, err := io.Copy(buf, downloadStream); err != nil {
+		return nil, fmt.Errorf("falha ao ler dados do arquivo: %w", err)
+	}
+
+	fileInfo := downloadStream.GetFile()
+	contentType := "application/octet-stream"
+
+	if fileInfo.Metadata != nil {
+		var metadata bson.M
+		if err := bson.Unmarshal(fileInfo.Metadata, &metadata); err == nil {
+			if ct, ok := metadata["contentType"].(string); ok && ct != "" {
+				contentType = ct
+			}
+		}
+	}
+
+	// --- FIM DA CORREÇÃO ---
+
+	return &dto.FileData{
+		Data:        buf.Bytes(),
+		ContentType: contentType,
+		Filename:    fileInfo.Name,
+	}, nil
 }

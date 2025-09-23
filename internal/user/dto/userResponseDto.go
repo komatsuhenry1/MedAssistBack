@@ -1,18 +1,5 @@
 package dto
 
-// id: 1,
-// name: "Ana Silva",
-// specialization: "Pediatria",
-// experience: 5,
-// rating: 4.8,
-// price: 80,
-// shift: "Manhã",
-// department: "Departamento de Pediatria",
-// image: "/nurse-woman-professional.jpg",
-// available: true,
-// location: "São Paulo - SP",
-// },
-
 type AllNursesListDto struct {
 	ID              string  `json:"id"`
 	Name            string  `json:"name"`

@@ -16,3 +16,8 @@ type AuthUser struct {
 type CodeResponseDTO struct {
 	Code int `json:"code"`
 }
+type FileData struct {
+	Data        []byte
+	ContentType string
+	Filename    string
+}

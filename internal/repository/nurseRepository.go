@@ -1,13 +1,15 @@
 package repository
 
 import (
+	// "bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io"
 	"medassist/internal/auth/dto"
-	userDTO "medassist/internal/user/dto"
 	"medassist/internal/model"
+	// nurseDTO "medassist/internal/nurse/dto"
+	userDTO "medassist/internal/user/dto"
 	"medassist/utils"
 	"time"
 
@@ -15,6 +17,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type NurseRepository interface {
@@ -28,7 +31,7 @@ type NurseRepository interface {
 	UpdateNurse(nurseId string, userUpdated bson.M) (model.Nurse, error)
 	UpdateNurseFields(userId string, updates map[string]interface{}) (model.Nurse, error)
 	SetLicenseDocumentID(nurseID, documentID primitive.ObjectID) error
-	UploadFile(file io.Reader, fileName string) (primitive.ObjectID, error)
+	UploadFile(file io.Reader, fileName string, contentType string) (primitive.ObjectID, error)
 	FindAuthNurseByID(id string) (dto.AuthUser, error)
 	UpdatePasswordByNurseID(userID string, hashedPassword string) error
 	GetIdsNursesPendents() ([]string, error)
@@ -77,14 +80,14 @@ func (r *nurseRepository) FindAuthNurseByID(id string) (dto.AuthUser, error) {
 		return authUser, fmt.Errorf("ID inválido")
 	}
 
-    err = r.collection.FindOne(r.ctx, bson.M{"_id": objectID}).Decode(&authUser)
-    if err != nil {
-        if errors.Is(err, mongo.ErrNoDocuments) {
-            return authUser, fmt.Errorf("enfermeiro não encontrado")
-        }
-        return authUser, err
-    }
-    return authUser, nil
+	err = r.collection.FindOne(r.ctx, bson.M{"_id": objectID}).Decode(&authUser)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return authUser, fmt.Errorf("enfermeiro não encontrado")
+		}
+		return authUser, err
+	}
+	return authUser, nil
 }
 
 func (r *nurseRepository) UpdatePasswordByNurseID(userID string, hashedPassword string) error {
@@ -147,19 +150,24 @@ func (r *nurseRepository) CreateNurse(nurse *model.Nurse) error {
 	return err
 }
 
-func (r *nurseRepository) UploadFile(file io.Reader, fileName string) (primitive.ObjectID, error) { // retorna o object id que foi criado em fs.files
-	uploadStream, err := r.bucket.OpenUploadStream(fileName)
-	if err != nil {
-		return primitive.NilObjectID, err
-	}
-	defer uploadStream.Close()
+func (r *nurseRepository) UploadFile(file io.Reader, fileName string, contentType string) (primitive.ObjectID, error) {
+    // Esta parte continua EXATAMENTE IGUAL
+    opts := options.GridFSUpload().
+        SetMetadata(bson.M{"contentType": contentType})
 
-	if _, err := io.Copy(uploadStream, file); err != nil {
-		return primitive.NilObjectID, err
-	}
+    // A MUDANÇA ESTÁ AQUI: Usamos a função sem "WithOptions"
+    uploadStream, err := r.bucket.OpenUploadStream(fileName, opts)
+    if err != nil {
+        return primitive.NilObjectID, err
+    }
+    defer uploadStream.Close()
 
-	fileID := uploadStream.FileID.(primitive.ObjectID)
-	return fileID, nil
+    if _, err := io.Copy(uploadStream, file); err != nil {
+        return primitive.NilObjectID, err
+    }
+
+    fileID := uploadStream.FileID.(primitive.ObjectID)
+    return fileID, nil
 }
 
 func (r *nurseRepository) SetLicenseDocumentID(nurseID, documentID primitive.ObjectID) error {
@@ -243,7 +251,7 @@ func (r *nurseRepository) UpdateNurseFields(id string, updates map[string]interf
 	return r.FindNurseById(id)
 }
 
-func (r *nurseRepository) GetIdsNursesPendents() ([]string, error){
+func (r *nurseRepository) GetIdsNursesPendents() ([]string, error) {
 	var nursesIds []string
 	filter := bson.M{"verification_seal": false}
 	cursor, err := r.collection.Find(r.ctx, filter)
@@ -334,14 +342,11 @@ func (r *nurseRepository) GetAllNurses() ([]userDTO.AllNursesListDto, error) {
 			Name:            nurseModel.Name,
 			Specialization:  nurseModel.Specialization,
 			YearsExperience: nurseModel.YearsExperience,
-			// Os campos 'Price' e 'Image' não existem no seu Model.
-			// Você precisará decidir de onde virão esses dados.
-			// Por enquanto, serão retornados com valores padrão (0 e string vazia).
 			Price:           0,
-			Image:           "",
+			Image:           nurseModel.FaceImageID.Hex(),
 			Shift:           nurseModel.Shift,
 			Department:      nurseModel.Department,
-			Available:       nurseModel.Online, // Mapeando o campo 'Online' para 'Available'
+			Available:       nurseModel.Online,  // Mapeando o campo 'Online' para 'Available'
 			Location:        nurseModel.Address, // Mapeando o campo 'Address' para 'Location'
 		}
 
@@ -356,3 +361,34 @@ func (r *nurseRepository) GetAllNurses() ([]userDTO.AllNursesListDto, error) {
 
 	return nursesDto, nil
 }
+
+// func (r *nurseRepository) FindFileByID(id primitive.ObjectID) (*nurseDTO.FileData, error) {
+
+// 	// Abre o stream de download para o arquivo
+// 	downloadStream, err := r.bucket.OpenDownloadStream(id)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("falha ao abrir stream de download: %w", err)
+// 	}
+// 	defer downloadStream.Close()
+
+// 	// Lê os dados do stream para um buffer
+// 	buf := new(bytes.Buffer)
+// 	if _, err := io.Copy(buf, downloadStream); err != nil {
+// 		return nil, fmt.Errorf("falha ao ler dados do arquivo: %w", err)
+// 	}
+
+// 	// Extrai o ContentType do metadata (você precisa salvar isso durante o upload!)
+// 	fileInfo := downloadStream.GetFile()
+// 	contentType := "application/octet-stream" // Tipo padrão
+// 	if metadata := fileInfo.Metadata; metadata != nil {
+// 		if ct, ok := metadata["contentType"].(string); ok {
+// 			contentType = ct
+// 		}
+// 	}
+
+// 	return &FileData{
+// 		Data:        buf.Bytes(),
+// 		ContentType: contentType,
+// 		Filename:    fileInfo.Name,
+// 	}, nil
+// }
