@@ -17,5 +17,6 @@ func SetupAdminRoutes(r *gin.RouterGroup, container *di.Container) {
 		admin.GET("/download/:id", container.AdminHandler.DownloadFile)
 		admin.PATCH("/approve/:id", middleware.AuthAdmin(), container.AdminHandler.ApproveNurseRegister)
 		admin.POST("/reject/:id", middleware.AuthAdmin(), container.AdminHandler.RejectNurseRegister)
+		admin.GET("/file/:id", middleware.AuthAdmin(), container.UserHandler.GetFileByID)
 	}
 }

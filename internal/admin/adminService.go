@@ -84,6 +84,7 @@ func (s *adminService) GetNurseDocumentsToAnalisys(nurseID string) ([]dto.Docume
 			Name:        "Documento de Licença (COREN)",
 			Type:        "license_document",
 			DownloadURL: fmt.Sprintf("%s/%s", baseURL, nurse.LicenseDocumentID.Hex()),
+			ImageID: nurse.FaceImageID.Hex(),
 		})
 	}
 	if !nurse.QualificationsID.IsZero() {
@@ -91,6 +92,7 @@ func (s *adminService) GetNurseDocumentsToAnalisys(nurseID string) ([]dto.Docume
 			Name:        "Certificado de Qualificações",
 			Type:        "qualifications",
 			DownloadURL: fmt.Sprintf("%s/%s", baseURL, nurse.QualificationsID.Hex()),
+			ImageID: nurse.FaceImageID.Hex(),
 		})
 	}
 	if !nurse.GeneralRegisterID.IsZero() {
@@ -98,6 +100,7 @@ func (s *adminService) GetNurseDocumentsToAnalisys(nurseID string) ([]dto.Docume
 			Name:        "Documento de Identidade (RG)",
 			Type:        "general_register",
 			DownloadURL: fmt.Sprintf("%s/%s", baseURL, nurse.GeneralRegisterID.Hex()),
+			ImageID: nurse.FaceImageID.Hex(),
 		})
 	}
 	if !nurse.ResidenceComprovantId.IsZero() {
@@ -105,6 +108,7 @@ func (s *adminService) GetNurseDocumentsToAnalisys(nurseID string) ([]dto.Docume
 			Name:        "Comprovante de Residência",
 			Type:        "residence_comprovant",
 			DownloadURL: fmt.Sprintf("%s/%s", baseURL, nurse.ResidenceComprovantId.Hex()),
+			ImageID: nurse.FaceImageID.Hex(),
 		})
 	}
 
