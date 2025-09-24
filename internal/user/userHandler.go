@@ -3,6 +3,7 @@ package user
 import (
 	"medassist/utils"
 	"net/http"
+	"medassist/internal/user/dto"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -51,4 +52,20 @@ func (h *UserHandler) GetFileByID(c *gin.Context) {
 
     c.Header("Content-Disposition", "inline; filename=\""+fileData.Filename+"\"")
     c.Data(http.StatusOK, fileData.ContentType, fileData.Data)
+}
+
+func (h *UserHandler) ContactUsMessage(c *gin.Context){
+
+	var contactUsDto dto.ContactUsDTO
+	if err := c.ShouldBindJSON(&contactUsDto); err != nil {
+		utils.SendErrorResponse(c, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := h.userService.ContactUsMessage(contactUsDto)
+	if err != nil {
+		utils.SendErrorResponse(c, err.Error(), http.StatusInternalServerError)
+	}
+	
+	utils.SendSuccessResponse(c, "Mensagem de contato para central enviada com sucesso.", http.StatusOK)
 }

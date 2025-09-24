@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"os"
+	"medassist/internal/user/dto"
 
 	"gopkg.in/gomail.v2"
 )
@@ -650,4 +651,104 @@ func SendEmailApprovedNurse(email string) error {
 	return nil
 }
 
+func SendContactUsEmail(contactUsDto dto.ContactUsDTO) error {	
+	m := gomail.NewMessage()
+
+	m.SetHeader("From", os.Getenv("EMAIL_SENDER"))
+	m.SetHeader("To", os.Getenv("EMAIL_CENTRAL_CONTACT"))
+
+
+
+	m.SetHeader("Reply-To", contactUsDto.Email)
+
+	m.SetHeader("Subject", fmt.Sprintf("Novo Contato: %s", contactUsDto.Subject))
+
+	html := fmt.Sprintf(`
+	<!DOCTYPE html>
+	<html lang="pt-BR">
+	<head>
+		<meta charset="UTF-8">
+		<title>Novo Contato Recebido</title>
+		<style>
+			body {
+				background-color: #f9f9f9;
+				font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+				color: #333333;
+				padding: 0;
+				margin: 0;
+			}
+			.container {
+				max-width: 600px;
+				margin: 40px auto;
+				background-color: #ffffff;
+				border-radius: 10px;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+				padding: 30px 40px;
+			}
+			h2 {
+				color: #1E88E5;
+				text-align: center;
+			}
+			p {
+				line-height: 1.6;
+				font-size: 15px;
+			}
+			strong {
+				color: #555555;
+			}
+			.message-box {
+				background-color: #f1f1f1;
+				border-left: 4px solid #1E88E5;
+				border-radius: 4px;
+				padding: 15px;
+				margin-top: 10px;
+			}
+			.footer {
+				margin-top: 30px;
+				font-size: 12px;
+				color: #999999;
+				text-align: center;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h2>📧 Novo Contato Recebido</h2>
+			<p>Você recebeu uma nova mensagem através do formulário de contato.</p>
+			
+			<p><strong>Nome:</strong> %s</p>
+			<p><strong>E-mail (para resposta):</strong> %s</p>
+			<p><strong>Telefone:</strong> %s</p>
+			<p><strong>Assunto:</strong> %s</p>
+			
+			<p><strong>Mensagem:</strong></p>
+			<div class="message-box">
+				%s
+			</div>
+
+			<div class="footer">
+				<p>Este é um e-mail automático enviado pelo sistema.</p>
+			</div>
+		</div>
+	</body>
+	</html>
+	`, contactUsDto.Name, contactUsDto.Email, contactUsDto.Phone, contactUsDto.Subject, contactUsDto.Message)
+
+	m.SetBody("text/html", html)
+
+	// Configuração do discador SMTP
+	d := gomail.NewDialer(
+		"smtp.gmail.com",
+		587,
+		os.Getenv("EMAIL_SENDER"),
+		os.Getenv("EMAIL_PASSWORD"),
+	)
+
+	// Envio do e-mail
+	if err := d.DialAndSend(m); err != nil {
+		return err
+	}
+
+	return nil
+}
 

@@ -1,16 +1,19 @@
 package user
 
 import (
+	"context"
+	"medassist/internal/auth/dto"
 	"medassist/internal/repository"
 	userDTO "medassist/internal/user/dto"
-	"medassist/internal/auth/dto"
-	"context"
+	"medassist/utils"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type UserService interface {
 	GetAllNurses() ([]userDTO.AllNursesListDto, error)
 	GetFileByID(ctx context.Context, id primitive.ObjectID) (*dto.FileData, error)
+	ContactUsMessage(contactUsDto userDTO.ContactUsDTO) error
 }
 
 type userService struct {
@@ -35,4 +38,13 @@ func (s *userService) GetAllNurses() ([]userDTO.AllNursesListDto, error){
 func (s *userService) GetFileByID(ctx context.Context, id primitive.ObjectID) (*dto.FileData, error) {
     // Repassa os parâmetros corretamente para o repositório.
     return s.userRepository.FindFileByID(ctx, id)
+}
+
+func (h *userService) ContactUsMessage(contactUsDto userDTO.ContactUsDTO) error {
+	err := utils.SendContactUsEmail(contactUsDto)
+	if err != nil{
+		return err
+	}
+
+	return nil
 }
